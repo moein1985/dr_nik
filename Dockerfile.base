@@ -1,0 +1,6 @@
+FROM new_invoice-web:clinic-deps
+
+# Make this image reusable as a generic Node base for other projects.
+WORKDIR /workspace
+ENTRYPOINT []
+CMD ["node", "-v"]

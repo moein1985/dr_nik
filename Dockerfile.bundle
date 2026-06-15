@@ -1,0 +1,7 @@
+FROM node:20-alpine
+WORKDIR /workspace/clinic
+COPY app_bundle.tar.gz /tmp/app_bundle.tar.gz
+RUN tar -xzf /tmp/app_bundle.tar.gz && rm /tmp/app_bundle.tar.gz
+ENV NODE_ENV=production
+EXPOSE 3000
+CMD ["npm", "run", "start"]

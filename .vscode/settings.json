@@ -1,0 +1,23 @@
+{
+  "files.watcherExclude": {
+    "**/deploy_bundle/**": true,
+    "**/*.tar": true,
+    "**/*.tar.gz": true,
+    "**/*.part*": true,
+    "**/*.chunk*": true
+  },
+  "search.exclude": {
+    "**/deploy_bundle/**": true,
+    "**/*.tar": true,
+    "**/*.tar.gz": true,
+    "**/*.part*": true,
+    "**/*.chunk*": true
+  },
+  "python-envs.pythonProjects": [
+    {
+      "path": ".",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
+}

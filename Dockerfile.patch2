@@ -1,0 +1,5 @@
+FROM dr_nik_clinic-app:vps-latest
+WORKDIR /workspace/clinic
+COPY next-patch.tar.gz /tmp/next-patch.tar.gz
+RUN tar -xzf /tmp/next-patch.tar.gz && rm /tmp/next-patch.tar.gz
+COPY hero-reverse.mp4 ./public/home/hero-reverse.mp4

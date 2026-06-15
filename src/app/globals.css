@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-default: "Segoe UI", Tahoma, Arial, sans-serif;
+  --font-fa-ar: Tahoma, "Segoe UI", Arial, sans-serif;
+
+  /* Clinic brand color tokens */
+  --clinic-teal:        #046e78;
+  --clinic-teal-mid:    #0c7882;
+  --clinic-teal-dark:   #09666f;
+  --clinic-teal-light:  #0d3540;
+  --clinic-teal-pale:   #1a4550;
+  --clinic-text-dark:   #e8ddd0;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+  font-family: var(--font-default), sans-serif;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+[data-locale="fa"],
+[data-locale="ar"] {
+  --font-default: "Vazirmatn", Tahoma, "Segoe UI", Arial, sans-serif;
+}

@@ -1,0 +1,19 @@
+# Patch build: reuses node_modules from existing image, only rebuilds Next.js app
+# Usage on server: docker build -f Dockerfile.patch -t dr_nik_clinic-app:redeploy-20260521c .
+
+FROM dr_nik_clinic-app:redeploy-20260521b AS builder
+WORKDIR /workspace/clinic
+COPY src/ ./src/
+COPY public/ ./public/
+COPY next.config.ts tsconfig.json tailwind.config.ts postcss.config.js global.d.ts next-env.d.ts package.json ./
+ENV DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dr_nik_clinic
+ENV SMTP_HOST=mailpit
+ENV SMTP_PORT=1025
+ENV SMTP_SECURE=false
+ENV STAFF_NOTIFICATION_EMAIL=staff@drnikclinic.local
+ENV NODE_ENV=production
+RUN rm -rf .next && npm run build
+
+FROM dr_nik_clinic-app:redeploy-20260521b
+COPY --from=builder /workspace/clinic/.next ./.next
+COPY --from=builder /workspace/clinic/public ./public

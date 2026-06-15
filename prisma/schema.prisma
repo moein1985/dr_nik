@@ -1,0 +1,108 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id            String          @id @default(uuid())
+  phoneNumber   String?         @unique
+  username      String?         @unique
+  email         String?         @unique
+  role          UserRole        @default(PATIENT)
+  passwordHash  String
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  appointments  Appointment[]
+  sessions      Session[]
+  passwordResets PasswordReset[]
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  createdByUserId String
+  patientName     String
+  patientPhone    String
+  doctorName      String
+  requestedAt     DateTime
+  serviceName     String
+  notes           String?
+  status          AppointmentStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+  createdBy       User              @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([createdByUserId])
+  @@index([requestedAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  userRole  UserRole
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordReset {
+  id          String   @id @default(uuid())
+  userId      String
+  otpCodeHash String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Video {
+  id          String   @id @default(uuid())
+  title       String
+  url         String
+  coverImage  String?
+  doctorSlug  String
+  createdAt   DateTime @default(now())
+
+  @@index([doctorSlug])
+}
+
+enum MediaStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Media {
+  id        String      @id @default(uuid())
+  title     String
+  url       String
+  category  String
+  status    MediaStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  @@index([status])
+  @@index([category])
+}

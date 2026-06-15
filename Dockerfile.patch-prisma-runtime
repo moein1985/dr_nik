@@ -1,0 +1,9 @@
+FROM dr_nik_clinic-app:vps-latest
+WORKDIR /workspace/clinic
+
+COPY .next ./.next
+COPY public ./public
+COPY package.json ./package.json
+COPY prisma ./prisma
+COPY node_modules/@prisma ./node_modules/@prisma
+COPY node_modules/.prisma ./node_modules/.prisma

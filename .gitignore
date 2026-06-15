@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+
+# next
+/.next/
+/out/
+
+# local env
+.env*
+!.env.example
+
+# misc
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# large deployment artifacts and local bundles
+app_image_redeploy_20260516*
+deploy_bundle/
+
+# local temp artifacts
+/temp/
+
+# generated local documentation extracts
+/docs/_clinic_docx_unzip/
+/docs/clinic_docx_extracted.txt
+/docs/clinic_pdf_extracted.txt
+/docs/image_folder_counts.tsv
+
+# local TypeScript build info
+tsconfig.tsbuildinfo
