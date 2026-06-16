@@ -1,47 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { SimpleCarousel } from "@/components/sliders/simple-carousel";
 import type { Dictionary } from "@/i18n/dictionary";
 
 type Props = { dict: Dictionary; locale: string };
 
 export function HomeTestimonials({ dict, locale }: Props) {
-  const [idx, setIdx] = useState(0);
   const quotes = dict.home.testimonials;
-  const current = quotes[idx % quotes.length] ?? quotes[0];
 
   return (
-    <section className="bg-clinic-teal px-4 py-14 text-center text-white lg:px-8">
-      <div className="mx-auto max-w-4xl">
-        <p className="text-6xl leading-none text-white/40">"</p>
-        <p className="mx-auto mt-3 text-sm leading-8 text-white/95 lg:text-base">{current}</p>
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIdx((p) => (p - 1 + quotes.length) % quotes.length)}
-            aria-label="previous testimonial"
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm transition hover:bg-white/40"
-          >
-            {locale === "en" ? "←" : "→"}
-          </button>
-          {quotes.slice(0, 3).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setIdx(i)}
-              className={`h-2 w-2 rounded-full transition ${i === idx % quotes.length ? "scale-125 bg-white" : "bg-white/40 hover:bg-white/70"}`}
-              aria-label={`testimonial ${i + 1}`}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={() => setIdx((p) => (p + 1) % quotes.length)}
-            aria-label="next testimonial"
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm transition hover:bg-white/40"
-          >
-            {locale === "en" ? "→" : "←"}
-          </button>
+    <section className="bg-clinic-teal px-4 py-14 text-white lg:px-8">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-white/10 bg-white/8 p-6 shadow-lg backdrop-blur-sm">
+        <p className="text-center text-sm uppercase tracking-[0.35em] text-white/70">{dict.home.testimonialsTitle}</p>
+        <div className="mt-4">
+          <SimpleCarousel
+            slides={quotes.map((quote, index) => ({
+              title: `Patient ${index + 1}`,
+              description: quote,
+            }))}
+            autoPlayInterval={4200}
+            title={dict.home.testimonialsTitle}
+          />
         </div>
+        <p className="mt-4 text-center text-xs text-white/70">{locale === "en" ? "Autoplay, dots, and prev/next controls are built into the shared slider." : "پخش خودکار، دکمه‌های قبلی/بعدی و نقاط ناوبری در اسلایدر مشترک فعال‌اند."}</p>
       </div>
     </section>
   );

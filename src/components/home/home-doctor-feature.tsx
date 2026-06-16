@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SimpleCarousel } from "@/components/sliders/simple-carousel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { getDoctorPortfolioBySlug } from "@/lib/doctor-portfolio-map";
@@ -52,13 +53,7 @@ export function HomeDoctorFeature({ dict, locale }: Props) {
             </a>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#56d9e8]">Doctor gallery</p>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {doctorImages.map((src, index) => (
-                  <div key={src} className="relative h-28 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-800">
-                    <Image src={src} alt={`${doctorName} ${index + 1}`} fill sizes="96px" className="object-cover" />
-                  </div>
-                ))}
-              </div>
+              <SimpleCarousel images={doctorImages} autoPlayInterval={4000} title="Doctor gallery" />
             </div>
           </div>
         </div>

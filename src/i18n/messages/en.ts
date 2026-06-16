@@ -11,7 +11,7 @@ const en = {
     contact: "Contact",
     booking: "Book Now",
     serviceCategories: [
-      { label: "Face Aesthetics", href: "/services/face" },
+      { label: "Face Aesthetics", href: "/services/facial" },
       { label: "Skin Rejuvenation", href: "/services/skin-rejuvenation" },
       { label: "Body Contouring", href: "/services/body-contouring" },
       { label: "Cosmetic Dentistry", href: "/services/dental" },
@@ -61,7 +61,7 @@ const en = {
       sectionTitle: "Our Core Services",
       ctaLabel: "View Services",
       items: [
-        { id: "face", title: "Face Aesthetics", desc: "Botox, fillers, lifting and facial rejuvenation", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/face" },
+        { id: "face", title: "Face Aesthetics", desc: "Botox, fillers, lifting and facial rejuvenation", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/facial" },
         { id: "skin", title: "Skin Rejuvenation", desc: "HydraFacial, microneedling, laser and pigmentation treatment", image: "/clinic/gallery/categories/clinic-environment.jpg", href: "/services/skin-rejuvenation" },
         { id: "body", title: "Body Contouring", desc: "Non-invasive shaping and body modeling", image: "/clinic/gallery/categories/equipment.png", href: "/services/body-contouring" },
         { id: "dental", title: "Cosmetic Dentistry", desc: "Laminate, composite, bleaching and implants", image: "/clinic/gallery/categories/team.png", href: "/services/dental" },

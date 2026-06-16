@@ -11,7 +11,7 @@ const ar = {
     contact: "التواصل",
     booking: "احجز الآن",
     serviceCategories: [
-      { label: "تجميل الوجه", href: "/services/face" },
+      { label: "تجميل الوجه", href: "/services/facial" },
       { label: "تجديد البشرة", href: "/services/skin-rejuvenation" },
       { label: "نحت الجسم", href: "/services/body-contouring" },
       { label: "طب الأسنان التجميلي", href: "/services/dental" },
@@ -61,7 +61,7 @@ const ar = {
       sectionTitle: "خدماتنا الرئيسية",
       ctaLabel: "عرض الخدمات",
       items: [
-        { id: "face", title: "تجميل الوجه", desc: "بوتوكس، فيلر، شد وتجديد الوجه", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/face" },
+        { id: "face", title: "تجميل الوجه", desc: "بوتوكس، فيلر، شد وتجديد الوجه", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/facial" },
         { id: "skin", title: "تجديد البشرة", desc: "هيدرافيشيال، ميكرونيدلينج، ليزر وعلاج التصبغات", image: "/clinic/gallery/categories/clinic-environment.jpg", href: "/services/skin-rejuvenation" },
         { id: "body", title: "نحت الجسم", desc: "تشكيل ونمذجة غير جراحية للجسم", image: "/clinic/gallery/categories/equipment.png", href: "/services/body-contouring" },
         { id: "dental", title: "طب الأسنان التجميلي", desc: "قشرة، مركبة، تبييض وزراعة الأسنان", image: "/clinic/gallery/categories/team.png", href: "/services/dental" },

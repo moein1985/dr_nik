@@ -11,7 +11,7 @@ const fa = {
     contact: "تماس",
     booking: "رزرو نوبت",
     serviceCategories: [
-      { label: "زیبایی صورت", href: "/services/face" },
+      { label: "زیبایی صورت", href: "/services/facial" },
       { label: "پوست و جوانسازی", href: "/services/skin-rejuvenation" },
       { label: "کانتورینگ بدن", href: "/services/body-contouring" },
       { label: "دندانپزشکی زیبایی", href: "/services/dental" },
@@ -61,7 +61,7 @@ const fa = {
       sectionTitle: "خدمات تخصصی کلینیک",
       ctaLabel: "مشاهده خدمات",
       items: [
-        { id: "face", title: "زیبایی صورت", desc: "بوتاکس، فیلر، لیفت و جوانسازی صورت", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/face" },
+        { id: "face", title: "زیبایی صورت", desc: "بوتاکس، فیلر، لیفت و جوانسازی صورت", image: "/clinic/gallery/categories/before-after.jpg", href: "/services/facial" },
         { id: "skin", title: "پوست و جوانسازی", desc: "هیدرافیشیال، میکرونیدلینگ، لیزر و درمان لک", image: "/clinic/gallery/categories/clinic-environment.jpg", href: "/services/skin-rejuvenation" },
         { id: "body", title: "کانتورینگ بدن", desc: "فرم دهی و مدل سازی غیرتهاجمی بدن", image: "/clinic/gallery/categories/equipment.png", href: "/services/body-contouring" },
         { id: "dental", title: "دندانپزشکی زیبایی", desc: "لمینیت، کامپوزیت، بلیچینگ و ایمپلنت", image: "/clinic/gallery/categories/team.png", href: "/services/dental" },

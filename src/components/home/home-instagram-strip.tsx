@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SimpleCarousel } from "@/components/sliders/simple-carousel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { clinicImages } from "@/lib/clinic-image-manifest";
@@ -56,13 +56,7 @@ export function HomeInstagramStrip({ dict: _dict, locale }: Props) {
                 <p className="text-sm font-semibold text-white">{sectionTitle}</p>
                 <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70">{section.images.length} photos</span>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {section.images.map((src, index) => (
-                  <div key={`${section.key}-${index}`} className="relative h-36 w-28 shrink-0 overflow-hidden rounded-xl bg-clinic-teal-pale/40">
-                    <Image src={src} alt={`${sectionTitle} ${index + 1}`} fill sizes="112px" className="object-cover" />
-                  </div>
-                ))}
-              </div>
+              <SimpleCarousel images={section.images} autoPlayInterval={4500} title={sectionTitle} />
             </article>
             );
           })}

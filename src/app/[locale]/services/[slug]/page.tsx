@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getServiceBySlug, getServicesForLocale } from "@/app/[locale]/services/service-content";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionary";
@@ -25,6 +25,23 @@ export default async function ServiceDetailPage({ params }: Props) {
 
   const localeCode = locale as Locale;
   const dict = getDictionary(localeCode);
+
+  if (slug === "facial" || slug === "face") {
+    redirect(`/${localeCode}/services/facial`);
+  }
+
+  if (slug === "dental") {
+    redirect(`/${localeCode}/services/dental`);
+  }
+
+  if (slug === "skin-rejuvenation") {
+    redirect(`/${localeCode}/services/skin-rejuvenation`);
+  }
+
+  if (slug === "body-contouring") {
+    redirect(`/${localeCode}/services/body-contouring`);
+  }
+
   const service = getServiceBySlug(localeCode, slug);
 
   if (!service) {
