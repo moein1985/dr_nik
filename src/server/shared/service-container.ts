@@ -2,6 +2,8 @@ import { env } from "@/server/config/env";
 import { CancelMyAppointmentUseCase } from "@/server/modules/appointment/application/cancel-my-appointment.use-case";
 import { CreateAppointmentUseCase } from "@/server/modules/appointment/application/create-appointment.use-case";
 import { DeleteAppointmentByStaffUseCase } from "@/server/modules/appointment/application/delete-appointment-by-staff.use-case";
+import { FindAppointmentByIdUseCase } from "@/server/modules/appointment/application/find-appointment-by-id.use-case";
+import { ListAppointmentsByDoctorIdsUseCase } from "@/server/modules/appointment/application/list-appointments-by-doctor-ids.use-case";
 import { ListAppointmentsUseCase } from "@/server/modules/appointment/application/list-appointments.use-case";
 import { ListMyAppointmentsUseCase } from "@/server/modules/appointment/application/list-my-appointments.use-case";
 import { UpdateAppointmentByStaffUseCase } from "@/server/modules/appointment/application/update-appointment-by-staff.use-case";
@@ -23,6 +25,15 @@ import { ResetPasswordUseCase } from "@/server/modules/auth/application/reset-pa
 import { RevokeSessionUseCase } from "@/server/modules/auth/application/revoke-session.use-case";
 import { SetUserActiveUseCase } from "@/server/modules/auth/application/set-user-active.use-case";
 import { SetUserRoleUseCase } from "@/server/modules/auth/application/set-user-role.use-case";
+import { GetMyDoctorProfileUseCase } from "@/server/modules/doctor-profile/application/get-my-doctor-profile.use-case";
+import { UpsertMyDoctorProfileUseCase } from "@/server/modules/doctor-profile/application/upsert-my-doctor-profile.use-case";
+import { PrismaDoctorProfileRepository } from "@/server/modules/doctor-profile/infrastructure/prisma-doctor-profile.repository";
+import { AssignStaffToDoctorUseCase } from "@/server/modules/doctor-staff/application/assign-staff-to-doctor.use-case";
+import { ListAssignedStaffForDoctorUseCase } from "@/server/modules/doctor-staff/application/list-assigned-staff-for-doctor.use-case";
+import { ListAssignableStaffUseCase } from "@/server/modules/doctor-staff/application/list-assignable-staff.use-case";
+import { ListDoctorsForStaffUseCase } from "@/server/modules/doctor-staff/application/list-doctors-for-staff.use-case";
+import { UnassignStaffFromDoctorUseCase } from "@/server/modules/doctor-staff/application/unassign-staff-from-doctor.use-case";
+import { PrismaDoctorStaffAssignmentRepository } from "@/server/modules/doctor-staff/infrastructure/prisma-doctor-staff-assignment.repository";
 import { KavenegarSmsSender } from "@/server/modules/auth/infrastructure/kavenegar-sms.sender";
 import { MockSmsSender } from "@/server/modules/auth/infrastructure/mock-sms.sender";
 import { PrismaPasswordResetRepository } from "@/server/modules/auth/infrastructure/prisma-password-reset.repository";
@@ -38,6 +49,8 @@ import { prisma } from "@/server/shared/prisma-client";
 
 const appointmentRepository = new PrismaAppointmentRepository(prisma);
 const userRepository = new PrismaUserRepository(prisma);
+const doctorProfileRepository = new PrismaDoctorProfileRepository(prisma);
+const doctorStaffAssignmentRepository = new PrismaDoctorStaffAssignmentRepository(prisma);
 const passwordResetRepository = new PrismaPasswordResetRepository(prisma);
 const sessionRepository = new PrismaSessionRepository(prisma);
 const passwordHasher = new ScryptPasswordHasher();
@@ -127,11 +140,34 @@ export const services = {
   appointment: {
     create: new CreateAppointmentUseCase(appointmentRepository),
     list: new ListAppointmentsUseCase(appointmentRepository),
+    listByDoctorIds: new ListAppointmentsByDoctorIdsUseCase(appointmentRepository),
+    findById: new FindAppointmentByIdUseCase(appointmentRepository),
     listMy: new ListMyAppointmentsUseCase(appointmentRepository),
     cancelMy: new CancelMyAppointmentUseCase(appointmentRepository),
     updateStatus: new UpdateAppointmentStatusUseCase(appointmentRepository),
     updateByStaff: new UpdateAppointmentByStaffUseCase(appointmentRepository),
     deleteByStaff: new DeleteAppointmentByStaffUseCase(appointmentRepository),
+  },
+  doctorProfile: {
+    getMy: new GetMyDoctorProfileUseCase(doctorProfileRepository),
+    upsertMy: new UpsertMyDoctorProfileUseCase(doctorProfileRepository),
+  },
+  doctorStaffAssignment: {
+    listAssignableStaff: new ListAssignableStaffUseCase(userRepository),
+    listAssignedStaffForDoctor: new ListAssignedStaffForDoctorUseCase(
+      doctorStaffAssignmentRepository,
+      userRepository,
+    ),
+    assignStaffToDoctor: new AssignStaffToDoctorUseCase(
+      doctorStaffAssignmentRepository,
+      userRepository,
+    ),
+    unassignStaffFromDoctor: new UnassignStaffFromDoctorUseCase(doctorStaffAssignmentRepository),
+    listDoctorsForStaff: new ListDoctorsForStaffUseCase(
+      doctorStaffAssignmentRepository,
+      userRepository,
+    ),
+    repository: doctorStaffAssignmentRepository,
   },
   staffEmail: {
     notify: new NotifyStaffUseCase(emailSender),

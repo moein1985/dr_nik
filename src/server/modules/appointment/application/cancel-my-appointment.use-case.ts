@@ -5,6 +5,20 @@ export class CancelMyAppointmentUseCase {
   constructor(private readonly repository: AppointmentRepository) {}
 
   async execute(appointmentId: string, userId: string): Promise<Appointment> {
+    const appointments = await this.repository.listByCreator(userId);
+    const target = appointments.find((item) => item.id === appointmentId);
+
+    if (!target) {
+      throw new Error("Appointment not found for this user");
+    }
+
+    const msUntilAppointment = target.requestedAt.getTime() - Date.now();
+    const cancelWindowMs = 24 * 60 * 60 * 1000;
+
+    if (msUntilAppointment < cancelWindowMs) {
+      throw new Error("Appointments can only be cancelled at least 24 hours before the scheduled time");
+    }
+
     return this.repository.cancelByCreator(appointmentId, userId);
   }
 }

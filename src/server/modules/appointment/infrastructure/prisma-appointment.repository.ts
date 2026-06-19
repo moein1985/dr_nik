@@ -10,6 +10,7 @@ import type { AppointmentRepository, CreateAppointmentInput } from "../domain/ap
 const toDomainAppointment = (appointment: PrismaAppointment): Appointment => ({
   id: appointment.id,
   createdByUserId: appointment.createdByUserId,
+  doctorUserId: appointment.doctorUserId ?? undefined,
   patientName: appointment.patientName,
   patientPhone: appointment.patientPhone,
   doctorName: appointment.doctorName,
@@ -30,6 +31,7 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
     const created = await this.prisma.appointment.create({
       data: {
         createdByUserId: input.createdByUserId,
+        doctorUserId: input.doctorUserId ?? null,
         patientName: input.patientName,
         patientPhone: input.patientPhone,
         doctorName: input.doctorName,
@@ -51,6 +53,23 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
     return appointments.map(toDomainAppointment);
   }
 
+  async listByDoctorIds(doctorUserIds: string[]): Promise<Appointment[]> {
+    if (doctorUserIds.length === 0) {
+      return [];
+    }
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorUserId: {
+          in: doctorUserIds,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return appointments.map(toDomainAppointment);
+  }
+
   async listByCreator(createdByUserId: string): Promise<Appointment[]> {
     const appointments = await this.prisma.appointment.findMany({
       where: { createdByUserId },
@@ -58,6 +77,14 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
     });
 
     return appointments.map(toDomainAppointment);
+  }
+
+  async findById(id: string): Promise<Appointment | null> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    return appointment ? toDomainAppointment(appointment) : null;
   }
 
   async cancelByCreator(id: string, createdByUserId: string): Promise<Appointment> {
@@ -119,6 +146,7 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
 
   async updateByStaff(input: {
     id: string;
+    doctorUserId?: string;
     patientName: string;
     patientPhone: string;
     doctorName: string;
@@ -130,6 +158,7 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
       const updated = await this.prisma.appointment.update({
         where: { id: input.id },
         data: {
+          doctorUserId: input.doctorUserId ?? null,
           patientName: input.patientName,
           patientPhone: input.patientPhone,
           doctorName: input.doctorName,

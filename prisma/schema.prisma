@@ -12,6 +12,7 @@ enum UserRole {
   PATIENT
   STAFF
   ADMIN
+  DOCTOR
   SUPER_ADMIN
 }
 
@@ -30,14 +31,39 @@ model User {
   passwordHash  String
   isActive      Boolean         @default(true)
   createdAt     DateTime        @default(now())
-  appointments  Appointment[]
+  createdAppointments Appointment[] @relation("AppointmentCreatedBy")
+  doctorAppointments  Appointment[] @relation("AppointmentDoctor")
   sessions      Session[]
   passwordResets PasswordReset[]
+  doctorProfile DoctorProfile?
+  doctorStaffAssignmentsAsDoctor DoctorStaffAssignment[] @relation("DoctorAssignments")
+  doctorStaffAssignmentsAsStaff  DoctorStaffAssignment[] @relation("StaffAssignments")
+  chatSessionsAsPatient ChatSession[] @relation("ChatSessionPatient")
+  chatSessionsAsDoctor  ChatSession[] @relation("ChatSessionDoctor")
+}
+
+model DoctorProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  aboutMe            String?
+  credentials        String?
+  acceptedInsurances String?
+  workingHours       String?
+  specialties        String?
+  services           String?
+  branchAddress      String?
+  experience         String?
+  extraNotes         String?
+  aiProfileContext   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Appointment {
   id              String            @id @default(uuid())
   createdByUserId String
+  doctorUserId    String?
   patientName     String
   patientPhone    String
   doctorName      String
@@ -46,10 +72,28 @@ model Appointment {
   notes           String?
   status          AppointmentStatus @default(PENDING)
   createdAt       DateTime          @default(now())
-  createdBy       User              @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdBy       User              @relation("AppointmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  doctor          User?             @relation("AppointmentDoctor", fields: [doctorUserId], references: [id], onDelete: SetNull)
 
   @@index([createdByUserId])
+  @@index([doctorUserId])
   @@index([requestedAt])
+}
+
+model DoctorStaffAssignment {
+  id           String   @id @default(uuid())
+  doctorUserId String
+  staffUserId  String
+  isActive     Boolean  @default(true)
+  assignedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  doctor       User     @relation("DoctorAssignments", fields: [doctorUserId], references: [id], onDelete: Cascade)
+  staff        User     @relation("StaffAssignments", fields: [staffUserId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorUserId, staffUserId])
+  @@index([doctorUserId, isActive])
+  @@index([staffUserId, isActive])
 }
 
 model Session {
@@ -105,4 +149,43 @@ model Media {
 
   @@index([status])
   @@index([category])
+}
+
+model AiProviderSetting {
+  id        String   @id @default(uuid())
+  provider  String
+  model     String
+  apiKey    String
+  baseUrl   String?
+  isEnabled Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatSession {
+  id            String         @id @default(uuid())
+  patientUserId String
+  doctorUserId  String
+  status        String         @default("ACTIVE")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  messages      ChatMessage[]
+  patient       User           @relation("ChatSessionPatient", fields: [patientUserId], references: [id], onDelete: Cascade)
+  doctor        User           @relation("ChatSessionDoctor", fields: [doctorUserId], references: [id], onDelete: Cascade)
+
+  @@unique([patientUserId, doctorUserId])
+  @@index([patientUserId])
+  @@index([doctorUserId])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  role      String
+  content   String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, role])
+  @@index([createdAt])
 }

@@ -32,7 +32,7 @@ export class CreateAdminUseCase {
     const user = await this.users.create({
       username: input.username,
       email: input.email,
-      role: "ADMIN",
+      role: "DOCTOR",
       passwordHash,
       isActive: true,
     });

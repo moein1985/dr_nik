@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
+import { DoctorDashboardPanel } from "@/components/doctor-dashboard-panel";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionary";
 
@@ -21,7 +21,7 @@ export default async function AdminPage({ params }: Props) {
     <main className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
       <h1 className="text-3xl font-bold text-slate-900">{dict.dashboard.adminTitle}</h1>
       <p className="mt-3 text-sm text-slate-600">{dict.dashboard.adminSubtitle}</p>
-      <AdminDashboardPanel dict={dict} />
+      <DoctorDashboardPanel dict={dict} locale={localeCode} />
     </main>
   );
 }

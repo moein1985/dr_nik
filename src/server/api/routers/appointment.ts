@@ -14,9 +14,16 @@ const createAppointmentInput = z.object({
   requestedAt: z.coerce.date(),
   serviceName: z.string().min(2),
   notes: z.string().max(1000).optional(),
+  doctorUserId: z.string().uuid().optional(),
+});
+const createByStaffInput = createAppointmentInput.extend({
+  doctorUserId: z.string().uuid().optional(),
 });
 
 const appointmentStatusSchema = z.enum(["PENDING", "CONFIRMED", "CANCELLED"]);
+const staffListInput = z.object({
+  doctorUserId: z.string().uuid().optional(),
+});
 
 async function resolveNotificationRecipients() {
   const users = await services.auth.listUsers.execute();
@@ -24,7 +31,7 @@ async function resolveNotificationRecipients() {
     .filter(
       (user) =>
         user.isActive &&
-        (user.role === "STAFF" || user.role === "ADMIN" || user.role === "SUPER_ADMIN"),
+        (user.role === "STAFF" || user.role === "DOCTOR" || user.role === "ADMIN" || user.role === "SUPER_ADMIN"),
     )
     .map((user) => user.email?.trim().toLowerCase())
     .filter((email): email is string => Boolean(email));
@@ -40,6 +47,7 @@ async function resolveNotificationRecipients() {
 
 const updateByStaffInput = z.object({
   id: z.string().uuid(),
+  doctorUserId: z.string().uuid().optional(),
   patientName: z.string().min(2),
   patientPhone: z.string().min(7),
   doctorName: z.string().min(2),
@@ -65,6 +73,7 @@ export const appointmentRouter = createTRPCRouter({
       const appointment = await services.appointment.create.execute({
         ...input,
         createdByUserId: ctx.userId,
+        doctorUserId: input.doctorUserId || undefined,
       });
 
       const recipients = await resolveNotificationRecipients();
@@ -98,12 +107,28 @@ export const appointmentRouter = createTRPCRouter({
       return services.appointment.cancelMy.execute(input.id, ctx.userId);
     }),
 
-  list: staffProcedure.query(async () => {
-    return services.appointment.list.execute();
+  list: staffProcedure.input(staffListInput.optional()).query(async ({ ctx, input }) => {
+    if (ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN") {
+      return services.appointment.listByDoctorIds.execute([ctx.userId]);
+    }
+
+    const scopes = await services.doctorStaffAssignment.listDoctorsForStaff.execute(ctx.userId);
+    const allowedDoctorIds = scopes.map((user) => user.id);
+
+    if (allowedDoctorIds.length === 0) {
+      return [];
+    }
+
+    if (input?.doctorUserId && !allowedDoctorIds.includes(input.doctorUserId)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Not assigned to this doctor" });
+    }
+
+    const doctorIds = input?.doctorUserId ? [input.doctorUserId] : allowedDoctorIds;
+    return services.appointment.listByDoctorIds.execute(doctorIds);
   }),
 
   createByStaff: staffProcedure
-    .input(createAppointmentInput)
+    .input(createByStaffInput)
     .mutation(async ({ ctx, input }) => {
       const limit = services.security.rateLimiter.check(
         `appointment:create-staff:${ctx.userId}:${ctx.ip}`,
@@ -115,9 +140,35 @@ export const appointmentRouter = createTRPCRouter({
         throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests. Try again later." });
       }
 
+      const inputDoctorUserId = input.doctorUserId;
+
+      if (ctx.userRole === "STAFF") {
+        if (!inputDoctorUserId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "doctorUserId is required for staff" });
+        }
+
+        const assigned = await services.doctorStaffAssignment.repository.isActiveAssignment(
+          inputDoctorUserId,
+          ctx.userId,
+        );
+
+        if (!assigned) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not assigned to this doctor" });
+        }
+      }
+
+      const doctorUserId =
+        ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN" ? ctx.userId : inputDoctorUserId;
+
       const appointment = await services.appointment.create.execute({
-        ...input,
+        patientName: input.patientName,
+        patientPhone: input.patientPhone,
+        doctorName: input.doctorName,
+        requestedAt: input.requestedAt,
+        serviceName: input.serviceName,
+        notes: input.notes,
         createdByUserId: ctx.userId,
+        doctorUserId,
       });
 
       const recipients = await resolveNotificationRecipients();
@@ -154,14 +205,68 @@ export const appointmentRouter = createTRPCRouter({
         id: z.string().uuid(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.userRole === "STAFF") {
+        const appointment = await services.appointment.findById.execute(input.id);
+        if (!appointment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Appointment not found" });
+        }
+
+        if (!appointment.doctorUserId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Appointment is not scoped to a doctor" });
+        }
+
+        const canAccess = await services.doctorStaffAssignment.repository.isActiveAssignment(
+          appointment.doctorUserId,
+          ctx.userId,
+        );
+
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not assigned to this doctor" });
+        }
+      }
+
       await services.appointment.deleteByStaff.execute(input.id);
       return { ok: true };
     }),
 
   updateByStaff: staffProcedure
     .input(updateByStaffInput)
-    .mutation(async ({ input }) => {
-      return services.appointment.updateByStaff.execute(input);
+    .mutation(async ({ ctx, input }) => {
+      const existing = await services.appointment.findById.execute(input.id);
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Appointment not found" });
+      }
+
+      const targetDoctorUserId =
+        ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN"
+          ? ctx.userId
+          : (input.doctorUserId ?? existing.doctorUserId);
+
+      if (ctx.userRole === "STAFF") {
+        if (!targetDoctorUserId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Appointment is not scoped to a doctor" });
+        }
+
+        const canAccess = await services.doctorStaffAssignment.repository.isActiveAssignment(
+          targetDoctorUserId,
+          ctx.userId,
+        );
+
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not assigned to this doctor" });
+        }
+      }
+
+      return services.appointment.updateByStaff.execute({
+        id: input.id,
+        doctorUserId: targetDoctorUserId,
+        patientName: input.patientName,
+        patientPhone: input.patientPhone,
+        doctorName: input.doctorName,
+        requestedAt: input.requestedAt,
+        serviceName: input.serviceName,
+        notes: input.notes,
+      });
     }),
 });

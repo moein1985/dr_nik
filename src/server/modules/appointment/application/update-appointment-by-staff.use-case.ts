@@ -3,6 +3,7 @@ import type { AppointmentRepository } from "../domain/appointment.repository";
 
 export type UpdateAppointmentByStaffInput = {
   id: string;
+  doctorUserId?: string;
   patientName: string;
   patientPhone: string;
   doctorName: string;

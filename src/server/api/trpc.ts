@@ -82,6 +82,7 @@ const requireRole = (roles: UserRole[]) =>
   });
 
 export const superAdminProcedure = requireRole(["SUPER_ADMIN"]);
-export const adminProcedure = requireRole(["ADMIN", "SUPER_ADMIN"]);
-export const staffProcedure = requireRole(["STAFF", "ADMIN", "SUPER_ADMIN"]);
+export const adminProcedure = requireRole(["DOCTOR", "ADMIN", "SUPER_ADMIN"]);
+export const doctorProcedure = requireRole(["DOCTOR", "ADMIN", "SUPER_ADMIN"]);
+export const staffProcedure = requireRole(["STAFF", "DOCTOR", "ADMIN", "SUPER_ADMIN"]);
 export const patientProcedure = requireRole(["PATIENT"]);

@@ -15,6 +15,7 @@ type Props = {
 
 type Appointment = {
   id: string;
+  doctorUserId?: string;
   patientName: string;
   patientPhone: string;
   doctorName: string;
@@ -44,10 +45,48 @@ type VideoItem = {
   createdAt: Date;
 };
 
+type DoctorScope = {
+  id: string;
+  username?: string;
+  email?: string;
+  phoneNumber?: string;
+};
+
+const getDoctorScopeLabel = (doctor: DoctorScope) =>
+  doctor.username?.trim() || doctor.email?.trim() || doctor.phoneNumber?.trim() || doctor.id;
+
+function getScopeCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      doctorScopeLabel: "Doctor scope",
+      noDoctorScope: "No doctor scope is assigned to your account.",
+      chooseDoctorFirst: "Please select a doctor scope first.",
+    };
+  }
+
+  if (locale === "ar") {
+    return {
+      doctorScopeLabel: "نطاق الطبيب",
+      noDoctorScope: "لا يوجد أي طبيب مخصص لحسابك.",
+      chooseDoctorFirst: "يرجى اختيار نطاق طبيب أولاً.",
+    };
+  }
+
+  return {
+    doctorScopeLabel: "دامنه پزشک",
+    noDoctorScope: "هیچ پزشکی برای حساب شما تخصیص داده نشده است.",
+    chooseDoctorFirst: "ابتدا یک دامنه پزشک انتخاب کنید.",
+  };
+}
+
 export function StaffDashboardPanel({ dict, locale }: Props) {
   const trpc = useMemo(() => getTRPCClient(), []);
+  const scopeCopy = getScopeCopy(locale);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [userRole, setUserRole] = useState<"STAFF" | "DOCTOR" | "ADMIN" | "SUPER_ADMIN" | null>(null);
+  const [doctorScopes, setDoctorScopes] = useState<DoctorScope[]>([]);
+  const [selectedDoctorUserId, setSelectedDoctorUserId] = useState<string>("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [videoItems, setVideoItems] = useState<VideoItem[]>([]);
@@ -75,6 +114,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPatientName, setEditPatientName] = useState("");
   const [editPatientPhone, setEditPatientPhone] = useState("");
+  const [editDoctorUserId, setEditDoctorUserId] = useState("");
   const [editDoctorName, setEditDoctorName] = useState<string>("");
   const [editServiceName, setEditServiceName] = useState("");
   const [editRequestedAtIso, setEditRequestedAtIso] = useState("");
@@ -109,19 +149,42 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     }
   }
 
-  async function load() {
+  function resolveSelectedDoctorName(doctorId: string, scopes: DoctorScope[] = doctorScopes): string {
+    const target = scopes.find((item) => item.id === doctorId);
+    return target ? getDoctorScopeLabel(target) : doctorName;
+  }
+
+  async function load(selectedDoctorId?: string) {
     setLoading(true);
     try {
       const me = await trpc.auth.me.query();
-      const ok = me.role === "STAFF" || me.role === "ADMIN" || me.role === "SUPER_ADMIN";
+      const ok = me.role === "STAFF" || me.role === "DOCTOR" || me.role === "ADMIN" || me.role === "SUPER_ADMIN";
       setAuthorized(ok);
+      setUserRole(ok ? (me.role as "STAFF" | "DOCTOR" | "ADMIN" | "SUPER_ADMIN") : null);
 
       if (!ok) {
         setLoading(false);
         return;
       }
 
-      const list = await trpc.appointment.list.query();
+      const scopes = await trpc.auth.listMyDoctorScopes.query();
+      const nextScopes = scopes as DoctorScope[];
+      setDoctorScopes(nextScopes);
+
+      const candidateDoctorId = selectedDoctorId ?? selectedDoctorUserId;
+      const activeDoctorId =
+        (candidateDoctorId && nextScopes.some((item) => item.id === candidateDoctorId)
+          ? candidateDoctorId
+          : nextScopes[0]?.id) ?? "";
+
+      setSelectedDoctorUserId(activeDoctorId);
+      if (activeDoctorId) {
+        setDoctorName(resolveSelectedDoctorName(activeDoctorId, nextScopes));
+      }
+
+      const list = await trpc.appointment.list.query(
+        activeDoctorId ? { doctorUserId: activeDoctorId } : undefined,
+      );
       setAppointments(list as Appointment[]);
 
       const mediaList = await trpc.media.getPending.query();
@@ -139,6 +202,24 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     void load();
   }, []);
 
+  useEffect(() => {
+    if (!selectedDoctorUserId) {
+      return;
+    }
+
+    const selected = doctorScopes.find((item) => item.id === selectedDoctorUserId);
+    if (selected) {
+      setDoctorName(getDoctorScopeLabel(selected));
+    }
+  }, [selectedDoctorUserId, doctorScopes]);
+
+  async function handleDoctorScopeChange(doctorUserId: string) {
+    setSelectedDoctorUserId(doctorUserId);
+    setEditingId(null);
+    setMessage("");
+    await load(doctorUserId);
+  }
+
   async function submitCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
@@ -148,8 +229,14 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       return;
     }
 
+    if (!selectedDoctorUserId) {
+      setMessage(scopeCopy.chooseDoctorFirst);
+      return;
+    }
+
     try {
       await trpc.appointment.createByStaff.mutate({
+        doctorUserId: selectedDoctorUserId,
         patientName,
         patientPhone,
         doctorName,
@@ -174,7 +261,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
   async function updateStatus(id: string, status: Appointment["status"]) {
     try {
       await trpc.appointment.updateStatus.mutate({ id, status });
-      await load();
+      await load(selectedDoctorUserId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : dict.auth.genericError);
     }
@@ -183,7 +270,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
   async function remove(id: string) {
     try {
       await trpc.appointment.deleteByStaff.mutate({ id });
-      await load();
+      await load(selectedDoctorUserId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : dict.auth.genericError);
     }
@@ -256,6 +343,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     setEditingId(item.id);
     setEditPatientName(item.patientName);
     setEditPatientPhone(item.patientPhone);
+    setEditDoctorUserId(item.doctorUserId ?? selectedDoctorUserId);
     setEditDoctorName(item.doctorName);
     setEditServiceName(item.serviceName);
     setEditRequestedAtIso(new Date(item.requestedAt).toISOString());
@@ -266,6 +354,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     setEditingId(null);
     setEditPatientName("");
     setEditPatientPhone("");
+    setEditDoctorUserId("");
     setEditDoctorName("");
     setEditServiceName("");
     setEditRequestedAtIso("");
@@ -284,9 +373,15 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       return;
     }
 
+    if (!editDoctorUserId) {
+      setMessage(scopeCopy.chooseDoctorFirst);
+      return;
+    }
+
     try {
       await trpc.appointment.updateByStaff.mutate({
         id: editingId,
+        doctorUserId: editDoctorUserId,
         patientName: editPatientName,
         patientPhone: editPatientPhone,
         doctorName: editDoctorName,
@@ -296,7 +391,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       });
 
       resetEdit();
-      await load();
+      await load(selectedDoctorUserId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : dict.auth.genericError);
     }
@@ -357,6 +452,31 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
           >
             {locale === "en" ? "Media Review" : locale === "ar" ? "مراجعة الصور" : "تایید مدیا"}
           </button>
+        </div>
+
+        <div className="mt-4 max-w-lg">
+          <label className="mb-1 block text-xs font-semibold text-slate-700">{scopeCopy.doctorScopeLabel}</label>
+          {doctorScopes.length === 0 ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              {scopeCopy.noDoctorScope}
+            </p>
+          ) : (
+            <select
+              value={selectedDoctorUserId}
+              onChange={(event) => {
+                void handleDoctorScopeChange(event.target.value);
+              }}
+              title={scopeCopy.doctorScopeLabel}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
+            >
+              {doctorScopes.map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  {getDoctorScopeLabel(doctor)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </section>
 
@@ -442,6 +562,24 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
                     <form onSubmit={submitEdit} className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 md:grid-cols-2">
                       <input value={editPatientName} onChange={(event) => setEditPatientName(event.target.value)} placeholder={dict.dashboard.patientName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
                       <input value={editPatientPhone} onChange={(event) => setEditPatientPhone(event.target.value)} placeholder={dict.dashboard.patientPhone} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                      <select
+                        value={editDoctorUserId}
+                        onChange={(event) => {
+                          const nextDoctorUserId = event.target.value;
+                          setEditDoctorUserId(nextDoctorUserId);
+                          setEditDoctorName(resolveSelectedDoctorName(nextDoctorUserId));
+                        }}
+                        aria-label={scopeCopy.doctorScopeLabel}
+                        title={scopeCopy.doctorScopeLabel}
+                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+                        disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
+                      >
+                        {doctorScopes.map((doctor) => (
+                          <option key={doctor.id} value={doctor.id}>
+                            {getDoctorScopeLabel(doctor)}
+                          </option>
+                        ))}
+                      </select>
                       <input value={editDoctorName} onChange={(event) => setEditDoctorName(event.target.value)} placeholder={dict.dashboard.doctorName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
                       <input value={editServiceName} onChange={(event) => setEditServiceName(event.target.value)} placeholder={dict.dashboard.serviceName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
                       <AppointmentDateTimeInput locale={locale} dict={dict} valueIso={editRequestedAtIso} onChangeIso={setEditRequestedAtIso} />

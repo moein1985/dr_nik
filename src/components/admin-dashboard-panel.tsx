@@ -13,9 +13,25 @@ type User = {
   phoneNumber?: string;
   username?: string;
   email?: string;
-  role: "PATIENT" | "STAFF" | "ADMIN" | "SUPER_ADMIN";
+  role: "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN";
   isActive: boolean;
 };
+
+function getRoleLabel(role: User["role"]) {
+  if (role === "ADMIN") {
+    return "DOCTOR";
+  }
+
+  return role;
+}
+
+function normalizeRole(role: User["role"]): Exclude<User["role"], "ADMIN"> {
+  if (role === "ADMIN") {
+    return "DOCTOR";
+  }
+
+  return role;
+}
 
 export function AdminDashboardPanel({ dict }: Props) {
   const trpc = useMemo(() => getTRPCClient(), []);
@@ -34,7 +50,7 @@ export function AdminDashboardPanel({ dict }: Props) {
     setLoading(true);
     try {
       const me = await trpc.auth.me.query();
-      const ok = me.role === "ADMIN" || me.role === "SUPER_ADMIN";
+      const ok = me.role === "ADMIN" || me.role === "DOCTOR" || me.role === "SUPER_ADMIN";
       setAuthorized(ok);
 
       if (!ok) {
@@ -45,7 +61,7 @@ export function AdminDashboardPanel({ dict }: Props) {
       const list = await trpc.auth.listUsers.query();
       setUsers(list as User[]);
       setRoleByUserId(
-        Object.fromEntries((list as User[]).map((user) => [user.id, user.role])),
+        Object.fromEntries((list as User[]).map((user) => [user.id, normalizeRole(user.role)])),
       );
     } catch {
       setAuthorized(false);
@@ -135,7 +151,7 @@ export function AdminDashboardPanel({ dict }: Props) {
               <article key={user.id} className="rounded-2xl border border-slate-200 p-4">
                 <p className="text-sm font-semibold text-slate-900">{user.username ?? user.phoneNumber ?? user.id}</p>
                 {user.email && <p className="text-xs text-slate-600">{user.email}</p>}
-                <p className="text-xs text-slate-600">{user.role}</p>
+                <p className="text-xs text-slate-600">{getRoleLabel(user.role)}</p>
                 <p className="mt-1 text-xs text-slate-500">{user.isActive ? dict.dashboard.active : dict.dashboard.inactive}</p>
 
                 {isSuperAdminRow ? (
@@ -144,7 +160,7 @@ export function AdminDashboardPanel({ dict }: Props) {
                   <>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <select
-                        value={roleByUserId[user.id] ?? user.role}
+                        value={roleByUserId[user.id] ?? normalizeRole(user.role)}
                         onChange={(event) =>
                           setRoleByUserId((prev) => ({
                             ...prev,
@@ -156,7 +172,7 @@ export function AdminDashboardPanel({ dict }: Props) {
                       >
                         <option value="PATIENT">PATIENT</option>
                         <option value="STAFF">STAFF</option>
-                        <option value="ADMIN">ADMIN</option>
+                        <option value="DOCTOR">DOCTOR</option>
                       </select>
                       <button
                         type="button"

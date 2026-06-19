@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { randomUUID } from "crypto";
 import {
   adminProcedure,
   createTRPCRouter,
+  doctorProcedure,
   protectedProcedure,
   publicProcedure,
   superAdminProcedure,
 } from "@/server/api/trpc";
 import { services } from "@/server/shared/service-container";
+import { prisma } from "@/server/shared/prisma-client";
 
 const phoneRegex = /^(\+?\d{10,15})$/;
 
@@ -22,6 +25,23 @@ const createPrivilegedUserInput = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+const aiProviderSettingsInput = z.object({
+  provider: z.string().trim().min(2).max(80),
+  model: z.string().trim().min(2).max(120),
+  apiKey: z.string().trim().min(8).max(500),
+  baseUrl: z.string().trim().url().max(500).optional(),
+  isEnabled: z.boolean(),
+});
+
+type AiProviderSettingsRow = {
+  id: string;
+  provider: string;
+  model: string;
+  apiKey: string;
+  baseUrl: string | null;
+  isEnabled: boolean;
+};
 
 export const authRouter = createTRPCRouter({
   registerPatient: publicProcedure
@@ -207,7 +227,7 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string().uuid(),
-        role: z.enum(["PATIENT", "STAFF", "ADMIN"]),
+        role: z.enum(["PATIENT", "STAFF", "ADMIN", "DOCTOR"]),
       }),
     )
     .mutation(async ({ input }) => {
@@ -216,5 +236,170 @@ export const authRouter = createTRPCRouter({
 
   bootstrapStatus: publicProcedure.query(async () => {
     return services.auth.bootstrapStatus();
+  }),
+
+  getMyDoctorProfile: doctorProcedure.query(async ({ ctx }) => {
+    return services.doctorProfile.getMy.execute(ctx.userId);
+  }),
+
+  upsertMyDoctorProfile: doctorProcedure
+    .input(
+      z.object({
+        aboutMe: z.string().trim().max(4000).optional(),
+        credentials: z.string().trim().max(4000).optional(),
+        acceptedInsurances: z.string().trim().max(4000).optional(),
+        workingHours: z.string().trim().max(4000).optional(),
+        specialties: z.string().trim().max(4000).optional(),
+        services: z.string().trim().max(4000).optional(),
+        branchAddress: z.string().trim().max(4000).optional(),
+        experience: z.string().trim().max(4000).optional(),
+        extraNotes: z.string().trim().max(4000).optional(),
+        aiProfileContext: z.string().trim().max(6000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return services.doctorProfile.upsertMy.execute(ctx.userId, input);
+    }),
+
+  listAssignableStaff: doctorProcedure.query(async () => {
+    return services.doctorStaffAssignment.listAssignableStaff.execute();
+  }),
+
+  listMyAssignedStaff: doctorProcedure.query(async ({ ctx }) => {
+    return services.doctorStaffAssignment.listAssignedStaffForDoctor.execute(ctx.userId);
+  }),
+
+  assignStaffToMe: doctorProcedure
+    .input(
+      z.object({
+        staffUserId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return services.doctorStaffAssignment.assignStaffToDoctor.execute(ctx.userId, input.staffUserId);
+    }),
+
+  unassignStaffFromMe: doctorProcedure
+    .input(
+      z.object({
+        staffUserId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await services.doctorStaffAssignment.unassignStaffFromDoctor.execute(ctx.userId, input.staffUserId);
+      return { ok: true };
+    }),
+
+  listMyDoctorScopes: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.userRole === "STAFF") {
+      return services.doctorStaffAssignment.listDoctorsForStaff.execute(ctx.userId);
+    }
+
+    if (ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN") {
+      const me = await services.auth.getPublicUser.execute(ctx.userId);
+      return me ? [me] : [];
+    }
+
+    if (ctx.userRole === "SUPER_ADMIN") {
+      const users = await services.auth.listUsers.execute();
+      return users.filter((user) => (user.role === "DOCTOR" || user.role === "ADMIN") && user.isActive);
+    }
+
+    return [];
+  }),
+
+  getAiProviderSettings: superAdminProcedure.query(async () => {
+    try {
+      const rows = await prisma.$queryRaw<AiProviderSettingsRow[]>`
+        SELECT "id", "provider", "model", "apiKey", "baseUrl", "isEnabled"
+        FROM "AiProviderSetting"
+        ORDER BY "updatedAt" DESC
+        LIMIT 1
+      `;
+
+      const current = rows[0];
+
+      if (!current) {
+        return {
+          provider: "avalai",
+          model: "gemini-2.5-flash",
+          apiKey: "",
+          baseUrl: "https://api.avalai.ir/v1",
+          isEnabled: true,
+        };
+      }
+
+      return {
+        provider: current.provider,
+        model: current.model,
+        apiKey: current.apiKey,
+        baseUrl: current.baseUrl ?? "",
+        isEnabled: current.isEnabled,
+      };
+    } catch {
+      return {
+        provider: "avalai",
+        model: "gemini-2.5-flash",
+        apiKey: "",
+        baseUrl: "https://api.avalai.ir/v1",
+        isEnabled: true,
+      };
+    }
+  }),
+
+  upsertAiProviderSettings: superAdminProcedure
+    .input(aiProviderSettingsInput)
+    .mutation(async ({ input }) => {
+      try {
+        const rows = await prisma.$queryRaw<AiProviderSettingsRow[]>`
+          SELECT "id"
+          FROM "AiProviderSetting"
+          ORDER BY "updatedAt" DESC
+          LIMIT 1
+        `;
+
+        const baseUrl = input.baseUrl?.trim() || null;
+
+        if (rows[0]) {
+          await prisma.$executeRaw`
+            UPDATE "AiProviderSetting"
+            SET
+              "provider" = ${input.provider},
+              "model" = ${input.model},
+              "apiKey" = ${input.apiKey},
+              "baseUrl" = ${baseUrl},
+              "isEnabled" = ${input.isEnabled},
+              "updatedAt" = now()
+            WHERE "id" = ${rows[0].id}
+          `;
+        } else {
+          await prisma.$executeRaw`
+            INSERT INTO "AiProviderSetting"
+              ("id", "provider", "model", "apiKey", "baseUrl", "isEnabled", "createdAt", "updatedAt")
+            VALUES
+              (${randomUUID()}, ${input.provider}, ${input.model}, ${input.apiKey}, ${baseUrl}, ${input.isEnabled}, now(), now())
+          `;
+        }
+
+        return { ok: true };
+      } catch {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "AI settings storage is not ready. Run Prisma migration first.",
+        });
+      }
+    }),
+
+  listActiveDoctors: publicProcedure.query(async () => {
+    return services.auth.listUsers.execute().then((users) =>
+      users
+        .filter((u) => u.isActive && (u.role === "DOCTOR" || u.role === "ADMIN"))
+        .map((u) => ({
+          id: u.id,
+          username: u.username ?? "دکتر",
+          email: u.email ?? "",
+        }))
+        .sort((a, b) => (a.username ?? "").localeCompare(b.username ?? "")),
+    );
   }),
 });

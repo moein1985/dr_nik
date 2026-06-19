@@ -12,6 +12,7 @@ export class InMemoryAppointmentRepository implements AppointmentRepository {
     const appointment: Appointment = {
       id: randomUUID(),
       createdByUserId: input.createdByUserId,
+      doctorUserId: input.doctorUserId,
       patientName: input.patientName,
       patientPhone: input.patientPhone,
       doctorName: input.doctorName,
@@ -33,10 +34,24 @@ export class InMemoryAppointmentRepository implements AppointmentRepository {
     );
   }
 
+  async listByDoctorIds(doctorUserIds: string[]): Promise<Appointment[]> {
+    if (doctorUserIds.length === 0) {
+      return [];
+    }
+
+    return this.appointments
+      .filter((item) => item.doctorUserId && doctorUserIds.includes(item.doctorUserId))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async listByCreator(createdByUserId: string): Promise<Appointment[]> {
     return this.appointments
       .filter((item) => item.createdByUserId === createdByUserId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async findById(id: string): Promise<Appointment | null> {
+    return this.appointments.find((item) => item.id === id) ?? null;
   }
 
   async cancelByCreator(id: string, createdByUserId: string): Promise<Appointment> {
@@ -75,6 +90,7 @@ export class InMemoryAppointmentRepository implements AppointmentRepository {
 
   async updateByStaff(input: {
     id: string;
+    doctorUserId?: string;
     patientName: string;
     patientPhone: string;
     doctorName: string;
@@ -89,6 +105,7 @@ export class InMemoryAppointmentRepository implements AppointmentRepository {
     }
 
     target.patientName = input.patientName;
+    target.doctorUserId = input.doctorUserId;
     target.patientPhone = input.patientPhone;
     target.doctorName = input.doctorName;
     target.requestedAt = input.requestedAt;

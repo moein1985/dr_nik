@@ -25,7 +25,7 @@ export class EnsureDefaultAdminUseCase {
 
     const admin = await this.users.create({
       username: input.username,
-      role: "ADMIN",
+      role: "DOCTOR",
       passwordHash,
       isActive: true,
     });

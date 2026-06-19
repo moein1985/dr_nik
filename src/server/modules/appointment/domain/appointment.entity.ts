@@ -3,6 +3,7 @@ export type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 export type Appointment = {
   id: string;
   createdByUserId: string;
+  doctorUserId?: string;
   patientName: string;
   patientPhone: string;
   doctorName: string;
