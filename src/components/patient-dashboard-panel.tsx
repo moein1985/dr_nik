@@ -53,7 +53,35 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; role: string; content: string; createdAt: Date }>>([]);
 
+  const quickServiceOptions = useMemo(
+    () => [
+      "فیشیال",
+      "لیزر",
+      "جوانسازی پوست",
+      "تزریق بوتاکس",
+      "کانتورینگ بدن",
+    ],
+    [],
+  );
+
   const selectedDoctor = useMemo(() => doctors.find((d) => d.id === selectedDoctorId), [doctors, selectedDoctorId]);
+
+  const upcomingAppointments = useMemo(
+    () => appointments
+      .map((item) => ({ ...item, requestedAt: new Date(item.requestedAt) }))
+      .filter((item) => item.status !== "CANCELLED" && item.requestedAt.getTime() >= Date.now())
+      .sort((left, right) => left.requestedAt.getTime() - right.requestedAt.getTime()),
+    [appointments],
+  );
+
+  const nextAppointment = upcomingAppointments[0] ?? null;
+  const isCreateFormReady = Boolean(
+    patientName.trim() &&
+    patientPhone.trim() &&
+    serviceName.trim() &&
+    selectedDoctorId &&
+    requestedAtIso,
+  );
 
   const matchedPortfolio = useMemo(
     () => (selectedDoctor ? getDoctorPortfolio(selectedDoctor.username, locale) : null),
@@ -133,7 +161,12 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
     }
 
     if (!selectedDoctorId) {
-      setMessage("لطفا یک پزشک انتخاب کنید");
+      setMessage(dict.dashboard.chooseDoctorError);
+      return;
+    }
+
+    if (!isCreateFormReady) {
+      setMessage(dict.dashboard.submitDisabledHint);
       return;
     }
 
@@ -148,7 +181,7 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
         doctorUserId: selectedDoctorId,
       });
 
-      setMessage(dict.dashboard.createButton + " ✓");
+      setMessage(dict.dashboard.createSuccess);
       setPatientName(profileName);
       setPatientPhone(profilePhone);
       setServiceName("");
@@ -213,8 +246,27 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
   return (
     <div className="mt-8 space-y-8">
       <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">{dict.dashboard.upcomingAppointments}</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{upcomingAppointments.length}</p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">{dict.dashboard.nextAppointment}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">
+              {nextAppointment ? formatLocalizedDate(locale, nextAppointment.requestedAt) : dict.dashboard.noUpcomingAppointments}
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">{dict.dashboard.selectedDoctorSummary}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{selectedDoctor?.username ?? "-"}</p>
+          </article>
+        </div>
+
         <h2 className="text-2xl font-bold text-slate-900">{dict.dashboard.createTitle}</h2>
+        <p className="mt-2 text-sm text-slate-500">{dict.dashboard.formRequiredHint}</p>
         <form onSubmit={submitCreate} className="mt-5 grid gap-3 md:grid-cols-2">
+          <p className="md:col-span-2 text-xs font-semibold text-slate-500">{dict.dashboard.formStepPatientInfo}</p>
           <input
             value={patientName}
             onChange={(e) => setPatientName(e.target.value)}
@@ -229,6 +281,7 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
             required
           />
+          <p className="md:col-span-2 mt-1 text-xs font-semibold text-slate-500">{dict.dashboard.formStepAppointmentInfo}</p>
           <input
             value={serviceName}
             onChange={(e) => setServiceName(e.target.value)}
@@ -236,6 +289,19 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
             required
           />
+          <div className="md:col-span-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-500">{dict.dashboard.quickServiceLabel}</span>
+            {quickServiceOptions.map((service) => (
+              <button
+                key={service}
+                type="button"
+                onClick={() => setServiceName(service)}
+                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+              >
+                {service}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-2">
             <select
               value={selectedDoctorId}
@@ -274,6 +340,7 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
             valueIso={requestedAtIso}
             onChangeIso={setRequestedAtIso}
           />
+          <p className="md:col-span-2 mt-1 text-xs font-semibold text-slate-500">{dict.dashboard.formStepExtraInfo}</p>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -281,9 +348,15 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
             className="md:col-span-2 rounded-xl border border-slate-300 px-3 py-2 text-sm"
             rows={3}
           />
-          <button className="md:col-span-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white">
+          <button
+            disabled={!isCreateFormReady}
+            className="md:col-span-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
             {dict.dashboard.createButton}
           </button>
+          {!isCreateFormReady && (
+            <p className="md:col-span-2 text-xs text-amber-700">{dict.dashboard.submitDisabledHint}</p>
+          )}
         </form>
       </section>
 
