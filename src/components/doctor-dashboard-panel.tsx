@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { getTRPCClient } from "@/trpc/client";
 import { DoctorAvailabilityManager } from "@/components/doctor-availability-manager";
+import { ChangePasswordForm } from "@/components/change-password-form";
 
 type Props = {
   dict: Dictionary;
@@ -274,6 +275,7 @@ export function DoctorDashboardPanel({ dict, locale }: Props) {
   return (
     <>
       <DoctorAvailabilityManager locale={locale} />
+      <ChangePasswordForm locale={locale} />
 
       <section className="mt-8 rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
         <h2 className="text-2xl font-bold text-slate-900">{copy.sectionTitle}</h2>

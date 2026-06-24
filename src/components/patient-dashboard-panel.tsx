@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AppointmentDateTimeInput } from "@/components/appointment-date-time-input";
+import { ChangePasswordForm } from "@/components/change-password-form";
 import type { Dictionary } from "@/i18n/dictionary";
 import type { Locale } from "@/i18n/config";
 import { formatLocalizedDate } from "@/i18n/date";
@@ -131,9 +132,11 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
       setDoctors(doctorsList);
 
       if (doctorsList.length > 0 && !selectedDoctorId) {
-        const firstDoctorId = doctorsList[0].id;
-        setSelectedDoctorId(firstDoctorId);
-        await loadChatHistory(firstDoctorId);
+        const firstDoctorId = doctorsList[0]?.id;
+        if (firstDoctorId) {
+          setSelectedDoctorId(firstDoctorId);
+          await loadChatHistory(firstDoctorId);
+        }
       }
     } catch {
       setAuthorized(false);
@@ -245,6 +248,8 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
 
   return (
     <div className="mt-8 space-y-8">
+      <ChangePasswordForm locale={locale} />
+
       <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
         <div className="grid gap-3 sm:grid-cols-3">
           <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -307,11 +312,11 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
               value={selectedDoctorId}
               onChange={(e) => setSelectedDoctorId(e.target.value)}
               className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm"
-              aria-label="انتخاب دکتر"
-              title="انتخاب دکتر برای نوبت"
+              aria-label={dict.dashboard.selectDoctorLabel}
+              title={dict.dashboard.selectDoctorTitle}
               required
             >
-              <option value="">انتخاب کنید</option>
+              <option value="">{dict.dashboard.selectPlaceholder}</option>
               {doctors.map((doctor) => (
                 <option key={doctor.id} value={doctor.id}>
                   {doctor.username}
@@ -429,7 +434,7 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
         )}
         {chatHistory.length > 0 && (
           <div className="mt-6 border-t border-slate-700 pt-4">
-            <h4 className="text-xs font-semibold text-slate-400">تاریخچه گفتگو</h4>
+            <h4 className="text-xs font-semibold text-slate-400">{dict.dashboard.chatHistoryTitle}</h4>
             <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
               {chatHistory.map((msg) => (
                 <div

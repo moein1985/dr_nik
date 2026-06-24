@@ -7,6 +7,7 @@ import {
   staffProcedure,
 } from "@/server/api/trpc";
 import { services } from "@/server/shared/service-container";
+import { APPOINTMENT_EMAIL_TEMPLATES } from "@/server/shared/error-messages";
 
 const createAppointmentInput = z.object({
   patientName: z.string().min(2),
@@ -80,15 +81,8 @@ export const appointmentRouter = createTRPCRouter({
       const recipients = await resolveNotificationRecipients();
       await services.staffEmail.notify.execute({
         to: recipients,
-        subject: "نوبت جدید ثبت شد",
-        html: `
-          <h2>نوبت جدید کلینیک زیبایی دکتر نیک</h2>
-          <p><strong>نام بیمار:</strong> ${appointment.patientName}</p>
-          <p><strong>شماره تماس:</strong> ${appointment.patientPhone}</p>
-          <p><strong>پزشک:</strong> ${appointment.doctorName}</p>
-          <p><strong>خدمت:</strong> ${appointment.serviceName}</p>
-          <p><strong>زمان درخواستی:</strong> ${appointment.requestedAt.toISOString()}</p>
-        `,
+        subject: APPOINTMENT_EMAIL_TEMPLATES.SUBJECT,
+        html: APPOINTMENT_EMAIL_TEMPLATES.PATIENT_BODY(appointment),
       });
 
       return appointment;
@@ -179,15 +173,8 @@ export const appointmentRouter = createTRPCRouter({
       const recipients = await resolveNotificationRecipients();
       await services.staffEmail.notify.execute({
         to: recipients,
-        subject: "نوبت جدید توسط کارکنان ثبت شد",
-        html: `
-          <h2>ثبت نوبت توسط کارکنان</h2>
-          <p><strong>نام بیمار:</strong> ${appointment.patientName}</p>
-          <p><strong>شماره تماس:</strong> ${appointment.patientPhone}</p>
-          <p><strong>پزشک:</strong> ${appointment.doctorName}</p>
-          <p><strong>خدمت:</strong> ${appointment.serviceName}</p>
-          <p><strong>زمان درخواستی:</strong> ${appointment.requestedAt.toISOString()}</p>
-        `,
+        subject: APPOINTMENT_EMAIL_TEMPLATES.STAFF_SUBJECT,
+        html: APPOINTMENT_EMAIL_TEMPLATES.STAFF_BODY(appointment),
       });
 
       return appointment;

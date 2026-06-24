@@ -35,6 +35,8 @@ function getCopy(locale: Locale) {
       saveSuccess: "Schedule saved successfully.",
       noSlots: "No time slots defined yet. Add your first slot to get started.",
       hint: "Times are in 24-hour format (e.g., 08:00 to 14:00).",
+      errorSlotEndTime: "Error in slot {slot}: End time must be after start time",
+      errorSaving: "Error saving schedule",
     };
   }
 
@@ -53,6 +55,8 @@ function getCopy(locale: Locale) {
       saveSuccess: "تم حفظ الجدول بنجاح.",
       noSlots: "لم يتم تحديد أي فترات زمنية بعد. أضف أول فترة للبدء.",
       hint: "الأوقات بتنسيق 24 ساعة (مثال: 08:00 إلى 14:00).",
+      errorSlotEndTime: "خطأ في الفتحة {slot}: يجب أن يكون وقت النهاية بعد وقت البدء",
+      errorSaving: "خطأ في حفظ الجدول",
     };
   }
 
@@ -70,6 +74,8 @@ function getCopy(locale: Locale) {
     saveSuccess: "برنامه با موفقیت ذخیره شد.",
     noSlots: "هنوز بازه زمانی تعریف نشده. اولین بازه را اضافه کنید.",
     hint: "زمان‌ها به فرمت ۲۴ ساعته هستند (مثال: 08:00 تا 14:00).",
+    errorSlotEndTime: "خطا در بازه {slot}: ساعت پایان باید بعد از ساعت شروع باشد",
+    errorSaving: "خطا در ذخیره برنامه",
   };
 }
 
@@ -135,11 +141,7 @@ export function DoctorAvailabilityManager({ locale }: Props) {
     for (let i = 0; i < slots.length; i++) {
       const slot = slots[i];
       if (slot && slot.startMinute >= slot.endMinute) {
-        const errorMsg = locale === "fa" 
-          ? `خطا در بازه ${i + 1}: ساعت پایان باید بعد از ساعت شروع باشد`
-          : locale === "ar"
-          ? `خطأ في الفترة ${i + 1}: يجب أن يكون وقت الانتهاء بعد وقت البدء`
-          : `Error in slot ${i + 1}: End time must be after start time`;
+        const errorMsg = copy.errorSlotEndTime.replace("{slot}", String(i + 1));
         setMessage(errorMsg);
         return;
       }
@@ -149,7 +151,7 @@ export function DoctorAvailabilityManager({ locale }: Props) {
       await trpc.doctorAvailability.setMy.mutate({ slots });
       setMessage(copy.saveSuccess);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error saving schedule");
+      setMessage(error instanceof Error ? error.message : copy.errorSaving ?? "Error saving schedule");
     }
   }
 

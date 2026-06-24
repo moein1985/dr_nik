@@ -15,40 +15,7 @@ export function HomeFinalCta({ dict, locale }: Props) {
       <div className="relative mx-auto max-w-3xl">
         <h3 className="text-3xl font-bold lg:text-5xl">{dict.home.finalCtaTitle}</h3>
         <p className="mt-3 text-base text-white/90 lg:text-xl">
-          {locale === "fa" ? (
-            <>
-              همین امروز نوبت مشاوره خود را{" "}
-              <a
-                href={`/${locale}/booking`}
-                className="font-bold text-orange-300 underline underline-offset-2"
-              >
-                آنلاین
-              </a>{" "}
-              ثبت کنید.
-            </>
-          ) : locale === "ar" ? (
-            <>
-              احجز استشارتك{" "}
-              <a
-                href={`/${locale}/booking`}
-                className="font-bold text-orange-300 underline underline-offset-2"
-              >
-                عبر الانترنت
-              </a>{" "}
-              اليوم.
-            </>
-          ) : (
-            <>
-              Book your{" "}
-              <a
-                href={`/${locale}/booking`}
-                className="font-bold text-orange-300 underline underline-offset-2"
-              >
-                online
-              </a>{" "}
-              consultation today.
-            </>
-          )}
+          {dict.home.finalCtaText}
         </p>
         <a
           href={`/${locale}/booking`}

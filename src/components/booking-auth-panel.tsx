@@ -27,6 +27,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(false);
@@ -256,14 +257,28 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
 
   const registerForm = (
     <form onSubmit={onRegisterSubmit} className="grid gap-3">
-      <input
-        type="tel"
-        value={phoneNumber}
-        onChange={(event) => setPhoneNumber(event.target.value)}
-        placeholder={dict.auth.phonePlaceholder}
-        className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
-        required
-      />
+      <div>
+        <input
+          type="tel"
+          value={phoneNumber}
+          onChange={(event) => {
+            const value = event.target.value;
+            setPhoneNumber(value);
+            const phoneRegex = /^(\+?\d{10,15})$/;
+            if (value && !phoneRegex.test(value)) {
+              setPhoneError("Invalid phone number format");
+            } else {
+              setPhoneError("");
+            }
+          }}
+          placeholder={dict.auth.phonePlaceholder}
+          className={`rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:ring-2 ${
+            phoneError ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-200"
+          }`}
+          required
+        />
+        {phoneError && <p className="mt-1 text-xs text-red-600">{phoneError}</p>}
+      </div>
       <input
         type="password"
         value={password}

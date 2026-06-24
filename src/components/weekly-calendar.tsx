@@ -129,9 +129,12 @@ export function WeeklyCalendar({
     }
 
     for (const key of Object.keys(grouped)) {
-      grouped[key].sort(
-        (a, b) => new Date(a.requestedAt).getTime() - new Date(b.requestedAt).getTime(),
-      );
+      const items = grouped[key];
+      if (items) {
+        items.sort(
+          (a, b) => new Date(a.requestedAt).getTime() - new Date(b.requestedAt).getTime(),
+        );
+      }
     }
 
     return grouped;

@@ -75,7 +75,7 @@ export function HomeFaq({ dict, locale }: Props) {
         </p>
         <h3 className="mt-2 text-3xl font-bold text-white">{title}</h3>
         <div className="mt-6 space-y-3">
-          {items.map((item) => (
+          {items?.map((item) => (
             <details
               key={item.question}
               className="group overflow-hidden rounded-2xl bg-clinic-teal text-white open:rounded-3xl"

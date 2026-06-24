@@ -37,7 +37,7 @@ export function ChatLeadWidget({ dict }: ChatLeadWidgetProps) {
       });
 
       if (!response.ok) {
-        throw new Error("request failed");
+        throw new Error(dict.chat.requestFailed ?? "request failed");
       }
 
       setStatus("success");

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import { getTRPCClient } from "@/trpc/client";
+import { getDictionary } from "@/i18n/dictionary";
 
 type Props = {
   locale: Locale;
@@ -21,70 +22,19 @@ type ServiceItem = {
 };
 
 const AVAILABLE_SERVICES = [
-  { key: "consultation", labelEn: "Consultation", labelAr: "استشارة", labelFa: "مشاوره" },
-  { key: "botox", labelEn: "Botox", labelAr: "البوتوكس", labelFa: "بوتاکس" },
-  { key: "filler", labelEn: "Filler", labelAr: "الفيلر", labelFa: "فیلر" },
-  { key: "laser", labelEn: "Laser Treatment", labelAr: "علاج بالليزر", labelFa: "لیزر درمانی" },
-  { key: "skin-care", labelEn: "Skin Care", labelAr: "العناية بالبشرة", labelFa: "مراقبت از پوست" },
-  { key: "hair-removal", labelEn: "Hair Removal", labelAr: "إزالة الشعر", labelFa: "لیزر موهای زائد" },
-  { key: "facial", labelEn: "Facial Treatment", labelAr: "علاج الوجه", labelFa: "فیشال" },
-  { key: "body-contouring", labelEn: "Body Contouring", labelAr: "نحت الجسم", labelFa: "کانتورینگ بدن" },
-];
-
-function getCopy(locale: Locale) {
-  if (locale === "en") {
-    return {
-      title: "Doctor Services Management",
-      subtitle: "Assign available services to each doctor. Only assigned services will appear in appointment forms.",
-      selectDoctor: "Select Doctor",
-      noDoctor: "No doctor selected",
-      noDoctors: "No doctors found",
-      availableServices: "Available Services",
-      saveButton: "Save Services",
-      loading: "Loading...",
-      saveSuccess: "Services saved successfully.",
-      selectPlaceholder: "-- Select a doctor --",
-    };
-  }
-
-  if (locale === "ar") {
-    return {
-      title: "إدارة خدمات الأطباء",
-      subtitle: "تعيين الخدمات المتاحة لكل طبيب. ستظهر الخدمات المعينة فقط في نماذج الحجز.",
-      selectDoctor: "اختر طبيب",
-      noDoctor: "لم يتم اختيار طبيب",
-      noDoctors: "لا يوجد أطباء",
-      availableServices: "الخدمات المتاحة",
-      saveButton: "حفظ الخدمات",
-      loading: "جاري التحميل...",
-      saveSuccess: "تم حفظ الخدمات بنجاح.",
-      selectPlaceholder: "-- اختر طبيب --",
-    };
-  }
-
-  return {
-    title: "مدیریت خدمات پزشکان",
-    subtitle: "خدمات مجاز هر پزشک را تعیین کنید. فقط خدمات تخصیص‌یافته در فرم نوبت نمایش داده می‌شوند.",
-    selectDoctor: "انتخاب پزشک",
-    noDoctor: "پزشکی انتخاب نشده",
-    noDoctors: "پزشکی یافت نشد",
-    availableServices: "خدمات موجود",
-    saveButton: "ذخیره خدمات",
-    loading: "در حال بارگذاری...",
-    saveSuccess: "خدمات با موفقیت ذخیره شد.",
-    selectPlaceholder: "-- انتخاب پزشک --",
-  };
-}
-
-function getServiceLabel(service: typeof AVAILABLE_SERVICES[0], locale: Locale): string {
-  if (locale === "en") return service.labelEn;
-  if (locale === "ar") return service.labelAr;
-  return service.labelFa;
-}
+  { key: "consultation" },
+  { key: "botox" },
+  { key: "filler" },
+  { key: "laser" },
+  { key: "skin-care" },
+  { key: "hair-removal" },
+  { key: "facial" },
+  { key: "body-contouring" },
+] as const;
 
 export function SuperAdminDoctorServicesManager({ locale }: Props) {
   const trpc = useMemo(() => getTRPCClient(), []);
-  const copy = getCopy(locale);
+  const dict = getDictionary(locale);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -120,20 +70,44 @@ export function SuperAdminDoctorServicesManager({ locale }: Props) {
         setServices(
           AVAILABLE_SERVICES.map((s) => {
             const existing = existingServices.get(s.key);
+            const keyMap: Record<string, keyof typeof dict.doctorServices.services> = {
+              "consultation": "consultation",
+              "botox": "botox",
+              "filler": "filler",
+              "laser": "laser",
+              "skin-care": "skinCare",
+              "hair-removal": "hairRemoval",
+              "facial": "facial",
+              "body-contouring": "bodyContouring",
+            };
+            const dictKey = keyMap[s.key] || "consultation";
             return {
               serviceKey: s.key,
-              serviceLabel: getServiceLabel(s, locale),
+              serviceLabel: dict.doctorServices.services[dictKey],
               isActive: existing?.isActive ?? false,
             };
           })
         );
       } catch {
         setServices(
-          AVAILABLE_SERVICES.map((s) => ({
-            serviceKey: s.key,
-            serviceLabel: getServiceLabel(s, locale),
-            isActive: false,
-          }))
+          AVAILABLE_SERVICES.map((s) => {
+            const keyMap: Record<string, keyof typeof dict.doctorServices.services> = {
+              "consultation": "consultation",
+              "botox": "botox",
+              "filler": "filler",
+              "laser": "laser",
+              "skin-care": "skinCare",
+              "hair-removal": "hairRemoval",
+              "facial": "facial",
+              "body-contouring": "bodyContouring",
+            };
+            const dictKey = keyMap[s.key] || "consultation";
+            return {
+              serviceKey: s.key,
+              serviceLabel: dict.doctorServices.services[dictKey],
+              isActive: false,
+            };
+          })
         );
       }
     })();
@@ -154,34 +128,34 @@ export function SuperAdminDoctorServicesManager({ locale }: Props) {
         doctorUserId: selectedDoctorId,
         services,
       });
-      setMessage(copy.saveSuccess);
+      setMessage(dict.doctorServices.saveSuccess);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error saving services");
+      setMessage(error instanceof Error ? error.message : dict.doctorServices.errorSaving ?? "Error saving services");
     }
   }
 
   if (loading) {
     return (
       <section className="mb-8 rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
-        <p className="text-sm text-slate-600">{copy.loading}</p>
+        <p className="text-sm text-slate-600">{dict.doctorServices.loading}</p>
       </section>
     );
   }
 
   return (
     <section className="mb-8 rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
-      <h2 className="text-2xl font-bold text-slate-900">{copy.title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{copy.subtitle}</p>
+      <h2 className="text-2xl font-bold text-slate-900">{dict.doctorServices.title}</h2>
+      <p className="mt-2 text-sm text-slate-600">{dict.doctorServices.subtitle}</p>
 
       <div className="mt-5">
         <label className="grid gap-2">
-          <span className="text-sm font-semibold text-slate-700">{copy.selectDoctor}</span>
+          <span className="text-sm font-semibold text-slate-700">{dict.doctorServices.selectDoctor}</span>
           <select
             value={selectedDoctorId}
             onChange={(e) => setSelectedDoctorId(e.target.value)}
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
           >
-            <option value="">{copy.selectPlaceholder}</option>
+            <option value="">{dict.doctorServices.selectPlaceholder}</option>
             {doctors.map((doctor) => (
               <option key={doctor.id} value={doctor.id}>
                 {doctor.username || doctor.email || doctor.id}
@@ -194,7 +168,7 @@ export function SuperAdminDoctorServicesManager({ locale }: Props) {
       {selectedDoctorId && (
         <>
           <div className="mt-5">
-            <h3 className="text-sm font-semibold text-slate-900">{copy.availableServices}</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{dict.doctorServices.availableServices}</h3>
             <div className="mt-3 grid gap-2 md:grid-cols-2">
               {services.map((service) => (
                 <label
@@ -218,7 +192,7 @@ export function SuperAdminDoctorServicesManager({ locale }: Props) {
             onClick={() => void save()}
             className="mt-5 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
           >
-            {copy.saveButton}
+            {dict.doctorServices.saveButton}
           </button>
         </>
       )}

@@ -5,7 +5,7 @@ USER root
 FROM base AS deps
 ARG NPM_REGISTRY=https://registry.npmjs.org
 COPY package.json package-lock.json* ./
-RUN npm ci --include=dev --registry=${NPM_REGISTRY}
+RUN npm install --registry=${NPM_REGISTRY}
 
 FROM base AS builder
 COPY --from=deps /workspace/clinic/node_modules ./node_modules

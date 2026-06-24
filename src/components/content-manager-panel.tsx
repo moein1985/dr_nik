@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import { getTRPCClient } from "@/trpc/client";
+import { getDictionary } from "@/i18n/dictionary";
 
 type FreshPost = {
   id: string;
@@ -32,6 +33,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
     caption: "",
     status: "PUBLISHED" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
   });
+  const dict = getDictionary(locale);
 
   const t = (key: string) => {
     const translations: Record<string, Record<Locale, string>> = {
@@ -94,7 +96,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
       void fetchPosts();
     } catch (error) {
       console.error("Failed to save post:", error);
-      alert("خطا در ذخیره پست");
+      alert(dict.contentManager.errorSavingPost);
     }
   };
 
@@ -117,7 +119,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
       void fetchPosts();
     } catch (error) {
       console.error("Failed to delete post:", error);
-      alert("خطا در حذف پست");
+      alert(dict.contentManager.errorDeletingPost);
     }
   };
 

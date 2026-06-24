@@ -56,7 +56,7 @@ export default async function AboutPage({ params }: Props) {
               {dict.home.ctaPrimary}
             </a>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-clinic-teal-mid">Doctor gallery</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-clinic-teal-mid">{dict.about.doctorGallery}</p>
               <div className="flex gap-3 overflow-x-auto pb-1">
                 {doctorImages.map((src, index) => (
                   <div key={src} className="relative h-28 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-200">

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { InMemoryRateLimiter } from "../in-memory-rate-limiter";
 
 describe("InMemoryRateLimiter", () => {
@@ -29,7 +29,7 @@ describe("InMemoryRateLimiter", () => {
     const result = rateLimiter.check("user-2", 2, 60);
 
     expect(result.allowed).toBe(false);
-    expect(result.retryAfter).toBeGreaterThan(0);
+    expect(result.retryAfterSeconds).toBeGreaterThan(0);
   });
 
   it("should reset after window expires", () => {
@@ -60,7 +60,7 @@ describe("InMemoryRateLimiter", () => {
     const result = rateLimiter.check("user-6", 1, 60);
 
     expect(result.allowed).toBe(false);
-    expect(result.retryAfter).toBeGreaterThan(0);
-    expect(result.retryAfter).toBeLessThanOrEqual(60);
+    expect(result.retryAfterSeconds).toBeGreaterThan(0);
+    expect(result.retryAfterSeconds).toBeLessThanOrEqual(60);
   });
 });

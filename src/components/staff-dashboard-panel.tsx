@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppointmentDateTimeInput } from "@/components/appointment-date-time-input";
 import { WeeklyCalendar } from "@/components/weekly-calendar";
+import { ChangePasswordForm } from "@/components/change-password-form";
 import type { Dictionary } from "@/i18n/dictionary";
 import type { Locale } from "@/i18n/config";
 import { formatLocalizedDate } from "@/i18n/date";
@@ -288,9 +289,9 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       setMediaUrl("");
       const mediaList = await trpc.media.getPending.query();
       setMediaItems(mediaList as MediaItem[]);
-      setMessage("تصویر جدید با موفقیت اضافه شد و در وضعیت در انتظار تایید قرار گرفت.");
+      setMessage(dict.dashboard.imageAddedSuccess);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "خطا در ثبت تصاویر");
+      setMessage(err instanceof Error ? err.message : dict.dashboard.errorSavingImages);
     }
   }
 
@@ -300,7 +301,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       const mediaList = await trpc.media.getPending.query();
       setMediaItems(mediaList as MediaItem[]);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "خطا در تغییر وضعیت");
+      setMessage(err instanceof Error ? err.message : dict.dashboard.errorUpdatingStatus);
     }
   }
 
@@ -322,9 +323,9 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       setVideoCoverImage("");
 
       await loadVideosForSlug(nextSlug);
-      setMessage("ویدیو جدید با موفقیت اضافه شد.");
+      setMessage(dict.dashboard.videoAddedSuccess);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "خطا در ثبت ویدیو");
+      setMessage(err instanceof Error ? err.message : dict.dashboard.errorSavingVideo);
     }
   }
 
@@ -334,7 +335,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       await loadVideosForSlug(doctorSlug);
       setMessage("ویدیو با موفقیت حذف شد.");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "خطا در حذف ویدیو");
+      setMessage(err instanceof Error ? err.message : dict.dashboard.errorDeletingVideo);
     }
   }
 
@@ -414,6 +415,8 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
 
   return (
     <div className="mt-8 space-y-8">
+      <ChangePasswordForm locale={locale} />
+
       <section className="rounded-3xl bg-white p-4 ring-1 ring-slate-200 lg:p-5">
         <div className="flex flex-wrap gap-2">
           <button
@@ -553,56 +556,90 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
           {filteredAppointments.length === 0 ? (
             <p className="mt-4 text-sm text-slate-600">{dict.dashboard.noAppointments}</p>
           ) : (
-            <div className="mt-4 space-y-3">
-              {filteredAppointments.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                  <p className="text-sm font-semibold text-slate-900">{item.patientName}</p>
-                  <p className="text-xs text-slate-600">{item.patientPhone} | {dict.dashboard.doctorName}: {item.doctorName}</p>
-                  <p className="text-xs text-slate-600">{item.serviceName}</p>
-                  <p className="mt-1 text-xs text-slate-500">{formatLocalizedDate(locale, new Date(item.requestedAt))}</p>
-                  {item.notes && <p className="mt-1 text-xs text-slate-500">{dict.dashboard.notes}: {item.notes}</p>}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => startEdit(item)} className="rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.editButton}</button>
-                    <button type="button" onClick={() => updateStatus(item.id, "PENDING")} className="rounded-lg bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700">{dict.dashboard.statusPending}</button>
-                    <button type="button" onClick={() => updateStatus(item.id, "CONFIRMED")} className="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.statusConfirmed}</button>
-                    <button type="button" onClick={() => updateStatus(item.id, "CANCELLED")} className="rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.statusCancelled}</button>
-                    <button type="button" onClick={() => remove(item.id)} className="rounded-lg bg-rose-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.deleteButton}</button>
-                  </div>
+            <div className="mt-4 space-y-4">
+              {(() => {
+                const groupedByDate = filteredAppointments.reduce((acc, item) => {
+                  const dateKey = new Date(item.requestedAt).toDateString();
+                  if (!acc[dateKey]) {
+                    acc[dateKey] = [];
+                  }
+                  acc[dateKey].push(item);
+                  return acc;
+                }, {} as Record<string, typeof filteredAppointments>);
 
-                  {editingId === item.id && (
-                    <form onSubmit={submitEdit} className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 md:grid-cols-2">
-                      <input value={editPatientName} onChange={(event) => setEditPatientName(event.target.value)} placeholder={dict.dashboard.patientName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
-                      <input value={editPatientPhone} onChange={(event) => setEditPatientPhone(event.target.value)} placeholder={dict.dashboard.patientPhone} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
-                      <select
-                        value={editDoctorUserId}
-                        onChange={(event) => {
-                          const nextDoctorUserId = event.target.value;
-                          setEditDoctorUserId(nextDoctorUserId);
-                          setEditDoctorName(resolveSelectedDoctorName(nextDoctorUserId));
-                        }}
-                        aria-label={scopeCopy.doctorScopeLabel}
-                        title={scopeCopy.doctorScopeLabel}
-                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
-                        disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
-                      >
-                        {doctorScopes.map((doctor) => (
-                          <option key={doctor.id} value={doctor.id}>
-                            {getDoctorScopeLabel(doctor)}
-                          </option>
-                        ))}
-                      </select>
-                      <input value={editDoctorName} onChange={(event) => setEditDoctorName(event.target.value)} placeholder={dict.dashboard.doctorName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
-                      <input value={editServiceName} onChange={(event) => setEditServiceName(event.target.value)} placeholder={dict.dashboard.serviceName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
-                      <AppointmentDateTimeInput locale={locale} dict={dict} valueIso={editRequestedAtIso} onChangeIso={setEditRequestedAtIso} />
-                      <textarea value={editNotes} onChange={(event) => setEditNotes(event.target.value)} placeholder={dict.dashboard.notes} className="md:col-span-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" rows={2} />
-                      <div className="md:col-span-2 flex gap-2">
-                        <button type="submit" className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white">{dict.dashboard.saveButton}</button>
-                        <button type="button" onClick={resetEdit} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">{dict.dashboard.closeButton}</button>
+                const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
+                  new Date(b).getTime() - new Date(a).getTime()
+                );
+
+                return sortedDates.map((dateKey) => {
+                  const dayAppointments = groupedByDate[dateKey];
+                  if (!dayAppointments) return null;
+                  const isBusyDay = dayAppointments.length >= 5;
+                  const formattedDate = formatLocalizedDate(locale, new Date(dateKey));
+
+                  return (
+                    <div key={dateKey} className="rounded-2xl border border-slate-200 overflow-hidden">
+                      <div className={`px-4 py-2 flex items-center justify-between ${isBusyDay ? 'bg-amber-50 border-b border-amber-200' : 'bg-slate-50 border-b border-slate-200'}`}>
+                        <span className="text-sm font-semibold text-slate-900">{formattedDate}</span>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${isBusyDay ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-700'}`}>
+                          {dayAppointments.length} {locale === "en" ? "appointments" : locale === "ar" ? "مواعيد" : "نوبت"}
+                        </span>
                       </div>
-                    </form>
-                  )}
-                </article>
-              ))}
+                      <div className="p-3 space-y-2">
+                        {dayAppointments.map((item) => (
+                          <article key={item.id} className="rounded-xl border border-slate-200 p-3">
+                            <p className="text-sm font-semibold text-slate-900">{item.patientName}</p>
+                            <p className="text-xs text-slate-600">{item.patientPhone} | {dict.dashboard.doctorName}: {item.doctorName}</p>
+                            <p className="text-xs text-slate-600">{item.serviceName}</p>
+                            <p className="mt-1 text-xs text-slate-500">{formatLocalizedDate(locale, new Date(item.requestedAt))}</p>
+                            {item.notes && <p className="mt-1 text-xs text-slate-500">{dict.dashboard.notes}: {item.notes}</p>}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <button type="button" onClick={() => startEdit(item)} className="rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.editButton}</button>
+                              <button type="button" onClick={() => updateStatus(item.id, "PENDING")} className="rounded-lg bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700">{dict.dashboard.statusPending}</button>
+                              <button type="button" onClick={() => updateStatus(item.id, "CONFIRMED")} className="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.statusConfirmed}</button>
+                              <button type="button" onClick={() => updateStatus(item.id, "CANCELLED")} className="rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.statusCancelled}</button>
+                              <button type="button" onClick={() => remove(item.id)} className="rounded-lg bg-rose-600 px-2 py-1 text-xs font-semibold text-white">{dict.dashboard.deleteButton}</button>
+                            </div>
+
+                            {editingId === item.id && (
+                              <form onSubmit={submitEdit} className="mt-3 grid gap-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 md:grid-cols-2">
+                                <input value={editPatientName} onChange={(event) => setEditPatientName(event.target.value)} placeholder={dict.dashboard.patientName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                                <input value={editPatientPhone} onChange={(event) => setEditPatientPhone(event.target.value)} placeholder={dict.dashboard.patientPhone} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                                <select
+                                  value={editDoctorUserId}
+                                  onChange={(event) => {
+                                    const nextDoctorUserId = event.target.value;
+                                    setEditDoctorUserId(nextDoctorUserId);
+                                    setEditDoctorName(resolveSelectedDoctorName(nextDoctorUserId));
+                                  }}
+                                  aria-label={scopeCopy.doctorScopeLabel}
+                                  title={scopeCopy.doctorScopeLabel}
+                                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+                                  disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
+                                >
+                                  {doctorScopes.map((doctor) => (
+                                    <option key={doctor.id} value={doctor.id}>
+                                      {getDoctorScopeLabel(doctor)}
+                                    </option>
+                                  ))}
+                                </select>
+                                <input value={editDoctorName} onChange={(event) => setEditDoctorName(event.target.value)} placeholder={dict.dashboard.doctorName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                                <input value={editServiceName} onChange={(event) => setEditServiceName(event.target.value)} placeholder={dict.dashboard.serviceName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                                <AppointmentDateTimeInput locale={locale} dict={dict} valueIso={editRequestedAtIso} onChangeIso={setEditRequestedAtIso} />
+                                <textarea value={editNotes} onChange={(event) => setEditNotes(event.target.value)} placeholder={dict.dashboard.notes} className="md:col-span-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" rows={2} />
+                                <div className="md:col-span-2 flex gap-2">
+                                  <button type="submit" className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white">{dict.dashboard.saveButton}</button>
+                                  <button type="button" onClick={resetEdit} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">{dict.dashboard.closeButton}</button>
+                                </div>
+                              </form>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </section>

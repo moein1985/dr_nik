@@ -1,12 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
 
+export type FreshPostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
 export type FreshPost = {
   id: string;
   authorUserId: string;
   mediaType: string;
   mediaUrl: string;
   caption: string | null;
-  status: string;
+  status: string; // Prisma returns string for enums
   createdAt: Date;
   updatedAt: Date;
   _count?: {
@@ -61,7 +63,7 @@ export class FreshRepository {
         mediaType: input.mediaType,
         mediaUrl: input.mediaUrl,
         caption: input.caption ?? null,
-        status: input.status ?? "PUBLISHED",
+        status: (input.status ?? "PUBLISHED") as FreshPostStatus,
       },
       include: {
         _count: {

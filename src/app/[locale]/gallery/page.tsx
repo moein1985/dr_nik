@@ -23,13 +23,16 @@ export default async function GalleryPage({ params }: Props) {
   const dict = getDictionary(localeCode);
 
   let approvedMedia: Media[] = [];
-  try {
-    approvedMedia = await prisma.media.findMany({
-      where: { status: "APPROVED" },
-      orderBy: { createdAt: "desc" },
-    });
-  } catch (error) {
-    console.warn("Gallery media query failed, falling back to an empty gallery state.", error);
+  // Only query database if DATABASE_URL is set (not during build)
+  if (process.env.DATABASE_URL) {
+    try {
+      approvedMedia = await prisma.media.findMany({
+        where: { status: "APPROVED" },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (error) {
+      console.warn("Gallery media query failed, falling back to an empty gallery state.", error);
+    }
   }
 
   return (
@@ -51,18 +54,14 @@ export default async function GalleryPage({ params }: Props) {
         {/* Real Gallery Items Section */}
         <section className="py-10">
           <h2 className="mb-6 text-2xl font-bold text-clinic-teal">
-            {localeCode === "en" ? "Patient Outcomes & Real Results" : localeCode === "ar" ? "النتائج الحقيقية للمراجعين" : "نتایج واقعی و گالری مراجعین"}
+            {dict.gallery.patientOutcomes}
           </h2>
 
           {approvedMedia.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-slate-200 py-12 text-center">
               <span className="text-4xl opacity-50 block mb-3">🖼️</span>
               <p className="text-slate-500 font-medium text-sm">
-                {localeCode === "en" 
-                  ? "No fully approved clinic photos exist in the gallery yet." 
-                  : localeCode === "ar" 
-                    ? "لا توجد صور معتمدة في المعرض بعد." 
-                    : "هنوز هیچ تصویری در گالری تایید یا منتشر نشده است."}
+                {dict.gallery.noApprovedPhotos}
               </p>
             </div>
           ) : (
@@ -100,10 +99,10 @@ export default async function GalleryPage({ params }: Props) {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: dict.pages.galleryCategories[0], href: `/${localeCode}/gallery/environment`, image: clinicImages.gallery.categories.environment, alt: "Clinic environment" },
-              { label: dict.pages.galleryCategories[1], href: `/${localeCode}/services`, image: clinicImages.gallery.categories.beforeAfter, alt: "Before and after" },
-              { label: dict.pages.galleryCategories[2], href: `/${localeCode}/gallery/equipment`, image: clinicImages.gallery.categories.equipment, alt: "Equipment" },
-              { label: dict.pages.galleryCategories[3], href: `/${localeCode}/gallery/team`, image: clinicImages.gallery.categories.team, alt: "Medical team" },
+              { label: dict.pages.galleryCategories[0], href: `/${localeCode}/gallery/environment`, image: clinicImages.gallery.categories.environment, alt: dict.gallery.clinicEnvironment },
+              { label: dict.pages.galleryCategories[1], href: `/${localeCode}/services`, image: clinicImages.gallery.categories.beforeAfter, alt: dict.gallery.beforeAfter },
+              { label: dict.pages.galleryCategories[2], href: `/${localeCode}/gallery/equipment`, image: clinicImages.gallery.categories.equipment, alt: dict.gallery.equipment },
+              { label: dict.pages.galleryCategories[3], href: `/${localeCode}/gallery/team`, image: clinicImages.gallery.categories.team, alt: dict.gallery.medicalTeam },
             ].map((item) => (
               <a key={item.label} href={item.href} className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
                 <article>

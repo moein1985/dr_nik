@@ -62,12 +62,16 @@ export default async function LocaleLayout({
   const dir = localeInfo[localeCode].dir;
 
   return (
-    <div data-locale={localeCode} dir={dir} className="min-h-screen bg-slate-50 text-slate-900">
-      <ClinicJsonLd locale={localeCode} dict={dict} />
-      <SiteHeader locale={localeCode} dict={dict} />
-      {children}
-      <SiteFooter dict={dict} locale={localeCode} />
-      <ChatLeadWidget dict={dict} />
-    </div>
+    <html lang={localeCode} dir={dir}>
+      <body>
+        <div data-locale={localeCode} className="min-h-screen bg-slate-50 text-slate-900">
+          <ClinicJsonLd locale={localeCode} dict={dict} />
+          <SiteHeader locale={localeCode} dict={dict} />
+          {children}
+          <SiteFooter dict={dict} locale={localeCode} />
+          <ChatLeadWidget dict={dict} />
+        </div>
+      </body>
+    </html>
   );
 }

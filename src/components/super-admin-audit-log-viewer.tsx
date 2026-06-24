@@ -16,6 +16,12 @@ const actionLabels: Record<string, { fa: string; en: string; ar: string }> = {
   DELETED: { fa: "حذف شد", en: "Deleted", ar: "تم الحذف" },
 };
 
+const getActionLabel = (action: string, locale: string): string => {
+  const label = actionLabels[action];
+  if (!label) return action;
+  return label[locale as keyof typeof label] ?? action;
+};
+
 const roleLabels: Record<string, { fa: string; en: string; ar: string }> = {
   PATIENT: { fa: "بیمار", en: "Patient", ar: "مريض" },
   STAFF: { fa: "کارمند", en: "Staff", ar: "موظف" },
@@ -123,11 +129,11 @@ export function SuperAdminAuditLogViewer({ locale }: AuditLogViewerProps) {
             className="w-full rounded-md border border-input bg-background px-3 py-2"
           >
             <option value="">{t("allActions")}</option>
-            <option value="CREATED">{actionLabels.CREATED[locale]}</option>
-            <option value="UPDATED">{actionLabels.UPDATED[locale]}</option>
-            <option value="CANCELLED">{actionLabels.CANCELLED[locale]}</option>
-            <option value="STATUS_CHANGED">{actionLabels.STATUS_CHANGED[locale]}</option>
-            <option value="DELETED">{actionLabels.DELETED[locale]}</option>
+            <option value="CREATED">{getActionLabel("CREATED", locale)}</option>
+            <option value="UPDATED">{getActionLabel("UPDATED", locale)}</option>
+            <option value="CANCELLED">{getActionLabel("CANCELLED", locale)}</option>
+            <option value="STATUS_CHANGED">{getActionLabel("STATUS_CHANGED", locale)}</option>
+            <option value="DELETED">{getActionLabel("DELETED", locale)}</option>
           </select>
         </div>
 

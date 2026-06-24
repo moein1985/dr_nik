@@ -42,9 +42,9 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
       <div className="border-b border-slate-700 bg-slate-950 text-slate-100">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2 text-xs lg:px-8">
           <div className="hidden items-center gap-4 lg:flex">
-            <a href={`tel:${dict.footer.phone.split("|")[0].trim().replace(/\s/g,"")}`} className="flex items-center gap-1.5 transition hover:text-clinic-teal-light">
+            <a href={`tel:${dict.footer.phone.split("|")[0]?.trim().replace(/\s/g,"")}`} className="flex items-center gap-1.5 transition hover:text-clinic-teal-light">
               <span aria-hidden="true">📞</span>
-              <span dir="ltr">{dict.footer.phone.split("|")[0].trim()}</span>
+              <span dir="ltr">{dict.footer.phone.split("|")[0]?.trim()}</span>
             </a>
             <span className="text-slate-600">|</span>
             <span className="max-w-xs truncate text-slate-400">{dict.footer.address.split("،")[0]}</span>

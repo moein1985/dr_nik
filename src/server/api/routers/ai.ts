@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/server/shared/prisma-client";
 import { createTRPCRouter, patientProcedure } from "@/server/api/trpc";
+import { AI_ERROR_MESSAGES } from "@/server/shared/error-messages";
 
 type AiProviderSettingsRow = {
   id: string;
@@ -61,7 +62,7 @@ async function getOrCreateChatSession(patientUserId: string, doctorUserId: strin
     `;
 
     if (sessions.length > 0) {
-      return sessions[0].id;
+      return sessions[0]?.id;
     }
 
     // Create new session
@@ -187,7 +188,7 @@ function buildSystemPrompt(doctorProfile?: DoctorProfileRow | null, doctorUser?:
 
   const parts: string[] = [basePrompt];
 
-  const doctorName = doctorUser.username || "دکتر";
+  const doctorName = doctorUser.username || AI_ERROR_MESSAGES.DEFAULT_DOCTOR_NAME;
   parts.push(`You are assisting for Dr. ${doctorName}'s beauty clinic.`);
 
   if (doctorProfile.aboutMe?.trim()) {
@@ -233,11 +234,11 @@ function extractAssistantText(response: OpenAiChatResponse): string {
   const rawContent = response.choices?.[0]?.message?.content;
 
   if (!rawContent) {
-    return "پاسخی از سرویس هوش مصنوعی دریافت نشد. لطفا دوباره تلاش کنید.";
+    return AI_ERROR_MESSAGES.NO_RESPONSE;
   }
 
   if (typeof rawContent === "string") {
-    return rawContent.trim() || "پاسخی از سرویس هوش مصنوعی دریافت نشد. لطفا دوباره تلاش کنید.";
+    return rawContent.trim() || AI_ERROR_MESSAGES.NO_RESPONSE;
   }
 
   const combined = rawContent
@@ -246,10 +247,33 @@ function extractAssistantText(response: OpenAiChatResponse): string {
     .filter(Boolean)
     .join("\n");
 
-  return combined || "پاسخی از سرویس هوش مصنوعی دریافت نشد. لطفا دوباره تلاش کنید.";
+  return combined || AI_ERROR_MESSAGES.NO_RESPONSE;
 }
 
 export const aiRouter = createTRPCRouter({
+  warmup: patientProcedure.query(async () => {
+    const settings = await readAiSettings();
+    
+    if (!settings.isEnabled) {
+      return {
+        ready: false,
+        reason: "DISABLED",
+      };
+    }
+
+    if (!settings.apiKey.trim()) {
+      return {
+        ready: false,
+        reason: "NOT_CONFIGURED",
+      };
+    }
+
+    return {
+      ready: true,
+      reason: "READY",
+    };
+  }),
+
   createMessage: patientProcedure
     .input(
       z.object({
@@ -265,7 +289,7 @@ export const aiRouter = createTRPCRouter({
 
       if (!settings.isEnabled) {
         return {
-          reply: "دستیار هوش مصنوعی در حال حاضر غیرفعال است. لطفا با پذیرش کلینیک تماس بگیرید.",
+          reply: AI_ERROR_MESSAGES.ASSISTANT_DISABLED,
           queueStatus: "DISABLED" as const,
           quotaRemaining: 0,
         };
@@ -273,7 +297,7 @@ export const aiRouter = createTRPCRouter({
 
       if (!settings.apiKey.trim()) {
         return {
-          reply: "تنظیمات دستیار هوش مصنوعی کامل نیست. لطفا از سوپرادمین بخواهید API Key را ثبت کند.",
+          reply: AI_ERROR_MESSAGES.NOT_CONFIGURED,
           queueStatus: "NOT_CONFIGURED" as const,
           quotaRemaining: 0,
         };
@@ -284,7 +308,7 @@ export const aiRouter = createTRPCRouter({
         const quotaUsed = await getQuotaUsage(patientUserId, input.doctorUserId);
         if (quotaUsed >= QUOTA_LIMIT) {
           return {
-            reply: `شما قبلاً ${QUOTA_LIMIT} سؤال برای این دکتر پرسیده‌اید. لطفا برای سؤالات بیشتر با کلینیک تماس بگیرید.`,
+            reply: AI_ERROR_MESSAGES.QUOTA_EXCEEDED(QUOTA_LIMIT),
             queueStatus: "QUOTA_EXCEEDED" as const,
             quotaRemaining: 0,
           };
@@ -298,8 +322,10 @@ export const aiRouter = createTRPCRouter({
       let doctorProfile: DoctorProfileRow | null = null;
       let doctorUser: UserRow | null = null;
       if (input.doctorUserId) {
-        doctorProfile = await readDoctorProfile(input.doctorUserId);
-        doctorUser = await readDoctorUser(input.doctorUserId);
+        const profile = await readDoctorProfile(input.doctorUserId);
+        const user = await readDoctorUser(input.doctorUserId);
+        doctorProfile = profile ?? null;
+        doctorUser = user ?? null;
       }
 
       const systemPrompt = buildSystemPrompt(doctorProfile, doctorUser);
@@ -312,61 +338,88 @@ export const aiRouter = createTRPCRouter({
         : input.text;
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
+      const timeout = setTimeout(() => controller.abort(), 25000);
 
       try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${settings.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: settings.model,
-            temperature: 0.3,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userContent },
-            ],
-          }),
-          signal: controller.signal,
-        });
+        let lastError: Error | null = null;
+        const maxRetries = 2;
+        
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${settings.apiKey}`,
+              },
+              body: JSON.stringify({
+                model: settings.model,
+                temperature: 0.3,
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: userContent },
+                ],
+              }),
+              signal: controller.signal,
+            });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          return {
-            reply: `ارتباط با سرویس هوش مصنوعی برقرار نشد (${response.status}). لطفا بعدا دوباره تلاش کنید.`,
-            queueStatus: "FAILED" as const,
-            quotaRemaining: input.doctorUserId ? QUOTA_LIMIT - (await getQuotaUsage(patientUserId, input.doctorUserId)) : 0,
-            providerError: errorText.slice(0, 400),
-          };
-        }
+            if (!response.ok) {
+              const errorText = await response.text();
+              lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+              
+              if (attempt < maxRetries && response.status >= 500) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                continue;
+              }
+              
+              return {
+                reply: AI_ERROR_MESSAGES.CONNECTION_FAILED(response.status),
+                queueStatus: "FAILED" as const,
+                quotaRemaining: input.doctorUserId ? QUOTA_LIMIT - (await getQuotaUsage(patientUserId, input.doctorUserId)) : 0,
+                providerError: errorText.slice(0, 400),
+                retryable: response.status >= 500,
+              };
+            }
 
-        const data = (await response.json()) as OpenAiChatResponse;
-        const reply = extractAssistantText(data);
+            const data = (await response.json()) as OpenAiChatResponse;
+            const reply = extractAssistantText(data);
 
-        // Record messages if doctor context exists
-        if (input.doctorUserId) {
-          const sessionId = await getOrCreateChatSession(patientUserId, input.doctorUserId);
-          if (sessionId) {
-            await recordChatMessage(sessionId, "user", input.text);
-            await recordChatMessage(sessionId, "assistant", reply);
+            // Record messages if doctor context exists
+            if (input.doctorUserId) {
+              const sessionId = await getOrCreateChatSession(patientUserId, input.doctorUserId);
+              if (sessionId) {
+                await recordChatMessage(sessionId, "user", input.text);
+                await recordChatMessage(sessionId, "assistant", reply);
+              }
+            }
+
+            const quotaUsed = input.doctorUserId ? await getQuotaUsage(patientUserId, input.doctorUserId) : 0;
+            const quotaRemaining = Math.max(0, QUOTA_LIMIT - quotaUsed);
+
+            return {
+              reply,
+              queueStatus: "PROCESSED" as const,
+              quotaRemaining,
+            };
+          } catch (err) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            
+            if (attempt < maxRetries && !controller.signal.aborted) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+              continue;
+            }
+            
+            break;
           }
         }
 
-        const quotaUsed = input.doctorUserId ? await getQuotaUsage(patientUserId, input.doctorUserId) : 0;
-        const quotaRemaining = Math.max(0, QUOTA_LIMIT - quotaUsed);
-
         return {
-          reply,
-          queueStatus: "PROCESSED" as const,
-          quotaRemaining,
-        };
-      } catch {
-        return {
-          reply: "پاسخ از سرویس هوش مصنوعی با تاخیر مواجه شد. لطفا دوباره تلاش کنید یا با پشتیبانی کلینیک تماس بگیرید.",
+          reply: controller.signal.aborted 
+            ? AI_ERROR_MESSAGES.TIMEOUT
+            : AI_ERROR_MESSAGES.GENERAL_ERROR,
           queueStatus: "TIMEOUT" as const,
           quotaRemaining: input.doctorUserId ? QUOTA_LIMIT - (await getQuotaUsage(patientUserId, input.doctorUserId)) : 0,
+          retryable: true,
         };
       } finally {
         clearTimeout(timeout);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           href="https://fonts.bunny.net/css?family=vazirmatn:300,400,500,700&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ErrorBoundary locale="fa">{children}</ErrorBoundary>
+      </body>
     </html>
   );
 }

@@ -9,6 +9,7 @@ import { ListMyAppointmentsUseCase } from "@/server/modules/appointment/applicat
 import { UpdateAppointmentByStaffUseCase } from "@/server/modules/appointment/application/update-appointment-by-staff.use-case";
 import { UpdateAppointmentStatusUseCase } from "@/server/modules/appointment/application/update-appointment-status.use-case";
 import { PrismaAppointmentRepository } from "@/server/modules/appointment/infrastructure/prisma-appointment.repository";
+import { ChangePasswordUseCase } from "@/server/modules/auth/application/change-password.use-case";
 import { CreateAdminUseCase } from "@/server/modules/auth/application/create-admin.use-case";
 import { CreateSessionUseCase } from "@/server/modules/auth/application/create-session.use-case";
 import { CreateStaffUseCase } from "@/server/modules/auth/application/create-staff.use-case";
@@ -120,6 +121,7 @@ export const services = {
     smsSender,
     registerPatient: new RegisterPatientUseCase(userRepository, passwordHasher),
     login: new LoginUseCase(userRepository, passwordHasher),
+    changePassword: new ChangePasswordUseCase(userRepository, passwordHasher),
     createAdmin: new CreateAdminUseCase(userRepository, passwordHasher),
     createStaff: new CreateStaffUseCase(userRepository, passwordHasher),
     listUsers: new ListUsersUseCase(userRepository),

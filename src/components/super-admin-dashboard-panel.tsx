@@ -5,6 +5,7 @@ import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
 import { SuperAdminAppointmentsViewer } from "@/components/super-admin-appointments-viewer";
 import { SuperAdminDoctorServicesManager } from "@/components/super-admin-doctor-services-manager";
 import { SuperAdminAuditLogViewer } from "@/components/super-admin-audit-log-viewer";
+import { ChangePasswordForm } from "@/components/change-password-form";
 import type { Dictionary } from "@/i18n/dictionary";
 import type { Locale } from "@/i18n/config";
 import { getTRPCClient } from "@/trpc/client";
@@ -208,6 +209,8 @@ export function SuperAdminDashboardPanel({ dict, locale }: Props) {
 
         {aiMessage && <p className="mt-4 text-sm font-medium text-slate-700">{aiMessage}</p>}
       </section>
+
+      <ChangePasswordForm locale={locale} />
 
       <SuperAdminDoctorServicesManager locale={locale} />
 

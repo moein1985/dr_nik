@@ -38,7 +38,8 @@ type Props = { dict: Dictionary; locale: Locale };
 
 export function HomeInstagramStrip({ dict: _dict, locale }: Props) {
   const cards = cardTitles[locale] ?? cardTitles.en;
-  const { heading, follow } = labels[locale] ?? labels.en;
+  const labelsData = labels[locale] ?? labels.en;
+  const { heading, follow } = labelsData ?? { heading: "Follow Us on Instagram", follow: "Follow Us" };
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-10 lg:px-8">
@@ -49,12 +50,12 @@ export function HomeInstagramStrip({ dict: _dict, locale }: Props) {
         </p>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {instagramSections.map((section, index) => {
-            const sectionTitle = cards[index] ?? section.key.toUpperCase();
+            const sectionTitle = cards?.[index] ?? section.key.toUpperCase();
             return (
             <article key={section.key} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-white">{sectionTitle}</p>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70">{section.images.length} photos</span>
+                <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70">{section.images.length} {_dict.home.instagramPhotos}</span>
               </div>
               <SimpleCarousel images={section.images} autoPlayInterval={4500} title={sectionTitle} />
             </article>

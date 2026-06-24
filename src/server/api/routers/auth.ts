@@ -11,6 +11,7 @@ import {
 } from "@/server/api/trpc";
 import { services } from "@/server/shared/service-container";
 import { prisma } from "@/server/shared/prisma-client";
+import { AUTH_MESSAGES } from "@/server/shared/error-messages";
 
 const phoneRegex = /^(\+?\d{10,15})$/;
 
@@ -127,6 +128,27 @@ export const authRouter = createTRPCRouter({
 
     return user;
   }),
+
+  changePassword: protectedProcedure
+    .input(
+      z
+        .object({
+          currentPassword: z.string().min(6),
+          newPassword: z.string().min(6),
+          confirmNewPassword: z.string().min(6),
+        })
+        .refine((data) => data.newPassword === data.confirmNewPassword, {
+          message: "Passwords do not match",
+          path: ["confirmNewPassword"],
+        }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return services.auth.changePassword.execute({
+        userId: ctx.userId,
+        currentPassword: input.currentPassword,
+        newPassword: input.newPassword,
+      });
+    }),
 
   forgotPassword: publicProcedure
     .input(
@@ -396,7 +418,7 @@ export const authRouter = createTRPCRouter({
         .filter((u) => u.isActive && (u.role === "DOCTOR" || u.role === "ADMIN"))
         .map((u) => ({
           id: u.id,
-          username: u.username ?? "دکتر",
+          username: u.username ?? AUTH_MESSAGES.DEFAULT_DOCTOR_NAME,
           email: u.email ?? "",
         }))
         .sort((a, b) => (a.username ?? "").localeCompare(b.username ?? "")),

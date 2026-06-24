@@ -46,7 +46,7 @@ export function PatientSliderGrid({ images, title, subtitle }: Props) {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <article className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
           <div className="relative aspect-[4/3]">
-            <Image src={images[currentIndex]} alt={title} fill sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
+            <Image src={images[currentIndex] ?? ""} alt={title} fill sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
           </div>
         </article>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">

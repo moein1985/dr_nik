@@ -7,7 +7,7 @@ export class IsSlotValidUseCase {
     const slots = await this.repository.findActiveSlotsForDoctor(doctorUserId);
 
     if (slots.length === 0) {
-      return true;
+      return false;
     }
 
     const weekday = requestedAt.getDay();

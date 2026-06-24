@@ -9,105 +9,69 @@ describe("DoctorServiceRepository", () => {
   beforeEach(() => {
     mockPrisma = {
       doctorService: {
-        create: vi.fn(),
         findMany: vi.fn(),
-        findUnique: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
       },
     };
     repository = new DoctorServiceRepository(mockPrisma as unknown as PrismaClient);
   });
 
-  it("should create a doctor service", async () => {
-    const input = {
-      doctorUserId: "doctor-1",
-      serviceName: "Consultation",
-      price: 100000,
-      duration: 30,
-    };
-
-    const mockService = {
-      id: "service-1",
-      ...input,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    mockPrisma.doctorService.create.mockResolvedValue(mockService);
-
-    const result = await repository.create(input);
-
-    expect(result).toEqual(mockService);
-    expect(mockPrisma.doctorService.create).toHaveBeenCalledWith({
-      data: input,
-    });
-  });
-
-  it("should list services by doctor", async () => {
+  it("should find services by doctor", async () => {
     const mockServices = [
-      { id: "service-1", serviceName: "Consultation" },
-      { id: "service-2", serviceName: "Surgery" },
+      { id: "service-1", serviceKey: "consultation", serviceLabel: "Consultation", doctorUserId: "doctor-1", isActive: true },
+      { id: "service-2", serviceKey: "surgery", serviceLabel: "Surgery", doctorUserId: "doctor-1", isActive: true },
     ];
 
     mockPrisma.doctorService.findMany.mockResolvedValue(mockServices);
 
-    const result = await repository.findByDoctorId("doctor-1");
+    const result = await repository.findByDoctor("doctor-1");
 
     expect(result).toEqual(mockServices);
     expect(mockPrisma.doctorService.findMany).toHaveBeenCalledWith({
       where: { doctorUserId: "doctor-1" },
-      orderBy: { createdAt: "desc" },
+      orderBy: { serviceLabel: "asc" },
     });
   });
 
-  it("should find service by id", async () => {
-    const mockService = {
-      id: "service-1",
-      serviceName: "Consultation",
-      price: 100000,
-    };
+  it("should find active services by doctor", async () => {
+    const mockServices = [
+      { id: "service-1", serviceKey: "consultation", serviceLabel: "Consultation", doctorUserId: "doctor-1", isActive: true },
+    ];
 
-    mockPrisma.doctorService.findUnique.mockResolvedValue(mockService);
+    mockPrisma.doctorService.findMany.mockResolvedValue(mockServices);
 
-    const result = await repository.findById("service-1");
+    const result = await repository.findActiveByDoctor("doctor-1");
 
-    expect(result).toEqual(mockService);
-    expect(mockPrisma.doctorService.findUnique).toHaveBeenCalledWith({
-      where: { id: "service-1" },
+    expect(result).toEqual(mockServices);
+    expect(mockPrisma.doctorService.findMany).toHaveBeenCalledWith({
+      where: { doctorUserId: "doctor-1", isActive: true },
+      orderBy: { serviceLabel: "asc" },
     });
   });
 
-  it("should update service", async () => {
-    const input = {
-      id: "service-1",
-      price: 150000,
-      duration: 45,
-    };
+  it("should delete all services for doctor", async () => {
+    mockPrisma.doctorService.deleteMany.mockResolvedValue({ count: 2 });
 
-    const mockService = {
-      id: "service-1",
-      serviceName: "Consultation",
-      price: 150000,
-      duration: 45,
-    };
+    await repository.deleteAllForDoctor("doctor-1");
 
-    mockPrisma.doctorService.update.mockResolvedValue(mockService);
-
-    const result = await repository.update(input);
-
-    expect(result).toEqual(mockService);
-    expect(mockPrisma.doctorService.update).toHaveBeenCalled();
+    expect(mockPrisma.doctorService.deleteMany).toHaveBeenCalledWith({
+      where: { doctorUserId: "doctor-1" },
+    });
   });
 
-  it("should delete service", async () => {
-    mockPrisma.doctorService.delete.mockResolvedValue({ id: "service-1" });
+  it("should create many services", async () => {
+    const services = [
+      { doctorUserId: "doctor-1", serviceKey: "consultation", serviceLabel: "Consultation", isActive: true },
+      { doctorUserId: "doctor-1", serviceKey: "surgery", serviceLabel: "Surgery", isActive: true },
+    ];
 
-    await repository.delete("service-1");
+    mockPrisma.doctorService.createMany.mockResolvedValue({ count: 2 });
 
-    expect(mockPrisma.doctorService.delete).toHaveBeenCalledWith({
-      where: { id: "service-1" },
+    await repository.createMany(services);
+
+    expect(mockPrisma.doctorService.createMany).toHaveBeenCalledWith({
+      data: services,
     });
   });
 });

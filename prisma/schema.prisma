@@ -23,6 +23,18 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum ChatSessionStatus {
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum FreshPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id            String          @id @default(uuid())
   phoneNumber   String?         @unique
@@ -113,6 +125,7 @@ model Appointment {
   @@index([createdByUserId])
   @@index([doctorUserId])
   @@index([requestedAt])
+  @@index([status, requestedAt])
 }
 
 model AppointmentAuditLog {
@@ -214,43 +227,50 @@ model AiProviderSetting {
 }
 
 model ChatSession {
-  id            String         @id @default(uuid())
+  id            String            @id @default(uuid())
   patientUserId String
   doctorUserId  String
-  status        String         @default("ACTIVE")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  status        ChatSessionStatus @default(ACTIVE)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   messages      ChatMessage[]
-  patient       User           @relation("ChatSessionPatient", fields: [patientUserId], references: [id], onDelete: Cascade)
-  doctor        User           @relation("ChatSessionDoctor", fields: [doctorUserId], references: [id], onDelete: Cascade)
+  patient       User              @relation("ChatSessionPatient", fields: [patientUserId], references: [id], onDelete: Cascade)
+  doctor        User              @relation("ChatSessionDoctor", fields: [doctorUserId], references: [id], onDelete: Cascade)
 
   @@unique([patientUserId, doctorUserId])
   @@index([patientUserId])
   @@index([doctorUserId])
+  @@index([status])
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
 model ChatMessage {
-  id        String      @id @default(uuid())
+  id        String          @id @default(uuid())
   sessionId String
-  role      String
+  role      ChatMessageRole
   content   String
-  createdAt DateTime    @default(now())
-  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+  session   ChatSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, role])
   @@index([createdAt])
 }
 
 model FreshPost {
-  id           String         @id @default(uuid())
+  id           String          @id @default(uuid())
   authorUserId String
   mediaType    String
   mediaUrl     String
   caption      String?
-  status       String         @default("PUBLISHED")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  author       User           @relation("FreshPostAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  status       FreshPostStatus @default(PUBLISHED)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  author       User            @relation("FreshPostAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
   likes        FreshLike[]
   comments     FreshComment[]
 
