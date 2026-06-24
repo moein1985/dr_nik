@@ -19,9 +19,14 @@ pnpm-debug.log*
 # large deployment artifacts and local bundles
 app_image_redeploy_20260516*
 deploy_bundle/
+*.tar
 
 # local temp artifacts
 /temp/
+
+# unused video files
+docs/landing_video.mp4
+docs/videos/*.mp4
 
 # generated local documentation extracts
 /docs/_clinic_docx_unzip/
