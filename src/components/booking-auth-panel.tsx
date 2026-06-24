@@ -10,7 +10,7 @@ type BookingAuthPanelProps = {
 };
 
 type Mode = "register" | "login" | "forgot";
-type UserRole = "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN";
+type UserRole = "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
 type AppointmentSummaryItem = {
   requestedAt: Date | string;
   status: "PENDING" | "CONFIRMED" | "CANCELLED";
@@ -41,6 +41,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
     ADMIN: "admin",
     DOCTOR: "admin",
     SUPER_ADMIN: "super-admin",
+    CONTENT_MANAGER: "content-manager",
   };
 
   const roleLabels: Record<UserRole, string> = {
@@ -49,6 +50,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
     ADMIN: dict.auth.roleAdmin,
     DOCTOR: dict.auth.roleDoctor,
     SUPER_ADMIN: dict.auth.roleSuperAdmin,
+    CONTENT_MANAGER: dict.auth.roleContentManager,
   };
 
   const formatSummaryDate = (value: Date) =>

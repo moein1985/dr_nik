@@ -21,6 +21,7 @@ const createPrivilegedUserInput = z
     email: z.string().trim().email(),
     password: z.string().min(6),
     confirmPassword: z.string().min(6),
+    role: z.enum(["ADMIN", "CONTENT_MANAGER", "STAFF", "DOCTOR"]).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -227,6 +228,7 @@ export const authRouter = createTRPCRouter({
         username: input.username,
         email: input.email,
         password: input.password,
+        role: input.role,
       });
     }),
 

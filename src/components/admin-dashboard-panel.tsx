@@ -13,7 +13,7 @@ type User = {
   phoneNumber?: string;
   username?: string;
   email?: string;
-  role: "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN";
+  role: "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
   isActive: boolean;
 };
 
@@ -173,6 +173,7 @@ export function AdminDashboardPanel({ dict }: Props) {
                         <option value="PATIENT">PATIENT</option>
                         <option value="STAFF">STAFF</option>
                         <option value="DOCTOR">DOCTOR</option>
+                        <option value="CONTENT_MANAGER">CONTENT_MANAGER</option>
                       </select>
                       <button
                         type="button"
