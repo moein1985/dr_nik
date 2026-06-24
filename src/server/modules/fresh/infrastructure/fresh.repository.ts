@@ -32,6 +32,7 @@ export type FreshPostWithDetails = FreshPost & {
     content: string;
     createdAt: Date;
     user: {
+      id: string;
       username: string | null;
     };
   }>;
@@ -90,7 +91,7 @@ export class FreshRepository {
             content: true,
             createdAt: true,
             user: {
-              select: { username: true },
+              select: { id: true, username: true },
             },
           },
           orderBy: { createdAt: "desc" },
