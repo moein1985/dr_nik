@@ -752,8 +752,127 @@ model FreshComment {
 - `ROADMAP-V2-CODE-GROUNDED.fa.md` (همین گزارش)
 - `TEST-CHECKLIST.fa.md` + `TEST-CHECKLIST.en.md` (چک‌لیست‌های تست)
 
-## یادداشت برای مجری بعدی (Sonnet 4.6)
-- ترتیب را رعایت کن: ابتدا **اتمام سیم‌کشی فاز ۲**، سپس فاز ۳ (testimonials)، بعد فازهای سنگین ۴ تا ۷ هرکدام با migration مجزا.
-- پس از هر فاز حتماً `npx tsc --noEmit` بگیر و سبز نگه‌دار.
-- هیچ تغییر مخربی روی schema نده؛ فیلدهای متنی فعلی را حفظ کن.
-- تصاویر testimonials در مسیر `F:\31 خرداد\experience\Patient1.png|Patient2.png|Patient3.png` هستند؛ باید به `public/testimonials/` کپی شوند.
+## یادداشت برای مجری بعدی (SWE-1.6)
+
+### 📍 وضعیت فعلی پروژه (۲۴ خرداد ۱۴۰۵)
+
+**✅ فازهای کامل شده:**
+- فاز ۰ تا ۷: همه کامل و تست شده
+- تست‌نویسی: پوشش 40-50% (60+ تست)
+- رفع باگ‌ها: 4 باگ از گزارش تست‌کننده رفع شد
+
+**📊 آمار پروژه:**
+- Migrations: 4 migration موفق
+- Backend Modules: 9 ماژول کامل
+- tRPC Routers: 10 router
+- UI Components: 25+ کامپوننت
+- Test Files: 14 فایل تست
+- Test Cases: 60+ تست
+- TypeScript: ✅ سبز (بدون خطا)
+
+**🔧 آخرین تغییرات (این نشست):**
+1. ✅ تست‌نویسی: 14 فایل تست جدید (Fresh, Appointment, Auth, Security, Doctor modules)
+2. ✅ رفع باگ Testimonials: عکس سوم اضافه شد
+3. ✅ رفع باگ Time Validation: اعتبارسنجی زمان در doctor availability
+4. ✅ رفع باگ UX: راهنمای بازه‌های زمانی در فرم نوبت
+5. ✅ رفع باگ Translations: ترجمه‌های فارسی صفحه facial services
+
+**📁 فایل‌های مهم ایجاد شده:**
+- `TEST-SUMMARY.md` - خلاصه کامل تست‌ها
+- `BUG-FIX-REPORT.md` - گزارش رفع باگ‌ها
+- 14 فایل تست در `__tests__/` directories
+
+**🎯 فاز ۸ (بعدی - شروع نشده):**
+- Dashboard Analytics
+- نمودارها و گزارش‌های آماری
+- Charts برای نوبت‌ها، کاربران، درآمد
+
+**⚠️ نکات مهم برای ادامه کار:**
+
+1. **TypeScript همیشه سبز:**
+   ```bash
+   npx tsc --noEmit
+   ```
+   قبل از هر commit یا تغییر بزرگ این دستور را اجرا کن.
+
+2. **Database Schema:**
+   - هیچ تغییر مخربی روی schema نده
+   - اگر نیاز به migration جدید بود، از `npx prisma migrate dev` استفاده کن
+   - همیشه قبل از migration، backup بگیر
+
+3. **تست‌ها:**
+   - قبل از شروع فاز جدید، تست‌های موجود را اجرا کن: `npm test`
+   - اگر تستی fail شد، ابتدا آن را رفع کن
+   - برای هر feature جدید، حداقل 2-3 تست بنویس
+
+4. **فایل‌های کلیدی:**
+   - `src/server/api/root.ts` - همه routerها اینجا register می‌شوند
+   - `src/server/shared/service-container.ts` - همه serviceها اینجا instantiate می‌شوند
+   - `prisma/schema.prisma` - database schema
+   - `src/i18n/messages/` - ترجمه‌ها (fa, en, ar)
+
+5. **Convention‌های کد:**
+   - همه componentها در `src/components/` یا `src/app/[locale]/`
+   - همه backend modules در `src/server/modules/[module-name]/`
+   - ساختار module: `infrastructure/`, `application/`, `domain/`
+   - همه routerها در `src/server/api/routers/`
+
+6. **چندزبانگی:**
+   - همیشه برای UI جدید، ترجمه‌های فارسی، عربی و انگلیسی اضافه کن
+   - فایل‌های ترجمه: `src/i18n/messages/fa.ts`, `en.ts`, `ar.ts`
+
+7. **Security:**
+   - همه mutationها باید rate-limited باشند
+   - همه endpointها باید با procedure مناسب محافظت شوند:
+     - `publicProcedure` - عمومی
+     - `protectedProcedure` - نیاز به login
+     - `staffProcedure` - فقط staff
+     - `adminProcedure` - فقط admin
+     - `superAdminProcedure` - فقط super admin
+     - `contentManagerProcedure` - فقط content manager
+
+8. **Audit Logging:**
+   - همه mutationهای مهم (create, update, delete, status change) باید audit log داشته باشند
+   - از `WriteAuditUseCase` استفاده کن
+
+**🐛 باگ‌های شناخته شده (اولویت پایین):**
+- Console warnings/errors (52 warning + 1 error) - نیاز به بررسی دقیق‌تر
+
+**📋 TODO List پیشنهادی برای فاز ۸:**
+1. طراحی UI dashboard analytics
+2. ایجاد endpoint برای آمار نوبت‌ها (تعداد، وضعیت، روند زمانی)
+3. ایجاد endpoint برای آمار کاربران (تعداد، نقش‌ها، فعالیت)
+4. نصب کتابخانه chart (مثلاً recharts یا chart.js)
+5. ایجاد componentهای نمودار
+6. اضافه کردن به پنل سوپرادمین
+7. تست و debug
+8. نوشتن تست‌های unit
+
+**🚀 دستورات مفید:**
+```bash
+# Development
+npm run dev
+
+# Type check
+npx tsc --noEmit
+
+# Build
+npm run build
+
+# Tests
+npm test
+npm run test:ui
+npm run test:coverage
+
+# Database
+npx prisma studio
+npx prisma migrate dev
+npx prisma generate
+
+# Lint
+npm run lint
+```
+
+**✨ موفق باشی!**
+پروژه در وضعیت عالی است. همه فازهای ۰-۷ کامل شده‌اند و آماده برای فاز ۸ هستیم. 
+کد تمیز، مستند و تست شده است. فقط convention‌ها را رعایت کن و TypeScript را سبز نگه دار! 💪

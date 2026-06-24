@@ -130,6 +130,21 @@ export function DoctorAvailabilityManager({ locale }: Props) {
 
   async function save() {
     setMessage("");
+    
+    // Validate time slots
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      if (slot && slot.startMinute >= slot.endMinute) {
+        const errorMsg = locale === "fa" 
+          ? `خطا در بازه ${i + 1}: ساعت پایان باید بعد از ساعت شروع باشد`
+          : locale === "ar"
+          ? `خطأ في الفترة ${i + 1}: يجب أن يكون وقت الانتهاء بعد وقت البدء`
+          : `Error in slot ${i + 1}: End time must be after start time`;
+        setMessage(errorMsg);
+        return;
+      }
+    }
+    
     try {
       await trpc.doctorAvailability.setMy.mutate({ slots });
       setMessage(copy.saveSuccess);

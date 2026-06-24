@@ -499,6 +499,17 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
       {activeTab === "create" && (
         <section className="rounded-3xl bg-white p-6 ring-1 ring-slate-200 lg:p-8">
           <h2 className="text-2xl font-bold text-slate-900">{dict.dashboard.createTitle}</h2>
+          {selectedDoctorUserId && (
+            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="text-xs text-blue-800">
+                {locale === "fa" 
+                  ? "💡 توجه: دکتر انتخابی باید بازه‌های کاری خود را در پنل دکتر تعریف کرده باشد. نوبت‌ها فقط در روزها و ساعات تعریف‌شده قابل رزرو هستند."
+                  : locale === "ar"
+                  ? "💡 ملاحظة: يجب على الطبيب المحدد تحديد ساعات عمله في لوحة الطبيب. يمكن حجز المواعيد فقط في الأيام والأوقات المحددة."
+                  : "💡 Note: The selected doctor must have defined their working hours in the doctor panel. Appointments can only be booked during defined days and times."}
+              </p>
+            </div>
+          )}
           <form onSubmit={submitCreate} className="mt-5 grid gap-3 md:grid-cols-2">
             <input value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder={dict.dashboard.patientName} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
             <input value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder={dict.dashboard.patientPhone} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
