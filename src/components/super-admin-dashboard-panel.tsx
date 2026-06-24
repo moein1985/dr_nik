@@ -2,11 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminDashboardPanel } from "@/components/admin-dashboard-panel";
+import { SuperAdminAppointmentsViewer } from "@/components/super-admin-appointments-viewer";
+import { SuperAdminDoctorServicesManager } from "@/components/super-admin-doctor-services-manager";
+import { SuperAdminAuditLogViewer } from "@/components/super-admin-audit-log-viewer";
 import type { Dictionary } from "@/i18n/dictionary";
+import type { Locale } from "@/i18n/config";
 import { getTRPCClient } from "@/trpc/client";
 
 type Props = {
   dict: Dictionary;
+  locale: Locale;
 };
 
 type AiSettingsForm = {
@@ -17,7 +22,7 @@ type AiSettingsForm = {
   isEnabled: boolean;
 };
 
-export function SuperAdminDashboardPanel({ dict }: Props) {
+export function SuperAdminDashboardPanel({ dict, locale }: Props) {
   const trpc = useMemo(() => getTRPCClient(), []);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -203,6 +208,12 @@ export function SuperAdminDashboardPanel({ dict }: Props) {
 
         {aiMessage && <p className="mt-4 text-sm font-medium text-slate-700">{aiMessage}</p>}
       </section>
+
+      <SuperAdminDoctorServicesManager locale={locale} />
+
+      <SuperAdminAuditLogViewer locale={locale} />
+
+      <SuperAdminAppointmentsViewer dict={dict} locale={locale} />
 
       <AdminDashboardPanel dict={dict} />
     </div>

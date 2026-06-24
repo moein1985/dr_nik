@@ -3,11 +3,37 @@ import type {
   CreateAppointmentInput,
 } from "../domain/appointment.repository";
 import type { Appointment } from "../domain/appointment.entity";
+import type { IsSlotValidUseCase } from "../../doctor-availability/application/is-slot-valid.use-case";
+import type { WriteAuditUseCase } from "../../appointment-audit/application/write-audit.use-case";
+import type { UserRole } from "@prisma/client";
 
 export class CreateAppointmentUseCase {
-  constructor(private readonly repository: AppointmentRepository) {}
+  constructor(
+    private readonly repository: AppointmentRepository,
+    private readonly isSlotValid?: IsSlotValidUseCase,
+    private readonly writeAudit?: WriteAuditUseCase
+  ) {}
 
-  async execute(input: CreateAppointmentInput): Promise<Appointment> {
-    return this.repository.create(input);
+  async execute(input: CreateAppointmentInput, actorRole: UserRole): Promise<Appointment> {
+    if (input.doctorUserId && this.isSlotValid) {
+      const isValid = await this.isSlotValid.execute(input.doctorUserId, input.requestedAt);
+      if (!isValid) {
+        throw new Error("The requested time slot is outside the doctor's working hours");
+      }
+    }
+
+    const appointment = await this.repository.create(input);
+
+    if (this.writeAudit) {
+      await this.writeAudit.execute({
+        appointmentId: appointment.id,
+        action: "CREATED",
+        actorUserId: input.createdByUserId,
+        actorRole,
+        after: appointment,
+      });
+    }
+
+    return appointment;
   }
 }

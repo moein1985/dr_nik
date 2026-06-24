@@ -1,8 +1,13 @@
 import type { Appointment } from "../domain/appointment.entity";
 import type { AppointmentRepository } from "../domain/appointment.repository";
+import type { WriteAuditUseCase } from "../../appointment-audit/application/write-audit.use-case";
+import type { UserRole } from "@prisma/client";
 
 export class CancelMyAppointmentUseCase {
-  constructor(private readonly repository: AppointmentRepository) {}
+  constructor(
+    private readonly repository: AppointmentRepository,
+    private readonly writeAudit?: WriteAuditUseCase
+  ) {}
 
   async execute(appointmentId: string, userId: string): Promise<Appointment> {
     const appointments = await this.repository.listByCreator(userId);
@@ -19,6 +24,19 @@ export class CancelMyAppointmentUseCase {
       throw new Error("Appointments can only be cancelled at least 24 hours before the scheduled time");
     }
 
-    return this.repository.cancelByCreator(appointmentId, userId);
+    const appointment = await this.repository.cancelByCreator(appointmentId, userId);
+
+    if (this.writeAudit) {
+      await this.writeAudit.execute({
+        appointmentId: appointment.id,
+        action: "CANCELLED",
+        actorUserId: userId,
+        actorRole: "PATIENT" as UserRole,
+        before: target,
+        after: appointment,
+      });
+    }
+
+    return appointment;
   }
 }

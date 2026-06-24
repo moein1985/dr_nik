@@ -43,6 +43,10 @@ import { ScryptPasswordHasher } from "@/server/modules/auth/infrastructure/scryp
 import type { PublicUser } from "@/server/modules/auth/domain/user.entity";
 import { NotifyStaffUseCase } from "@/server/modules/staff-email/application/notify-staff.use-case";
 import { SmtpEmailSender } from "@/server/modules/staff-email/infrastructure/smtp-email.sender";
+import { DoctorAvailabilityService } from "@/server/modules/doctor-availability/domain/doctor-availability.service";
+import { DoctorServiceService } from "@/server/modules/doctor-service/domain/doctor-service.service";
+import { AppointmentAuditService } from "@/server/modules/appointment-audit/domain/appointment-audit.service";
+import { FreshService } from "@/server/modules/fresh/domain/fresh.service";
 import { InMemoryRateLimiter } from "@/server/security/in-memory-rate-limiter";
 import { LoginLockoutService } from "@/server/security/login-lockout.service";
 import { prisma } from "@/server/shared/prisma-client";
@@ -53,6 +57,10 @@ const doctorProfileRepository = new PrismaDoctorProfileRepository(prisma);
 const doctorStaffAssignmentRepository = new PrismaDoctorStaffAssignmentRepository(prisma);
 const passwordResetRepository = new PrismaPasswordResetRepository(prisma);
 const sessionRepository = new PrismaSessionRepository(prisma);
+const doctorAvailabilityService = new DoctorAvailabilityService(prisma);
+const doctorServiceService = new DoctorServiceService(prisma);
+const appointmentAuditService = new AppointmentAuditService(prisma);
+const freshService = new FreshService(prisma);
 const passwordHasher = new ScryptPasswordHasher();
 const emailSender = new SmtpEmailSender();
 const rateLimiter = new InMemoryRateLimiter();
@@ -138,20 +146,24 @@ export const services = {
     bootstrapStatus: getBootstrapStatus,
   },
   appointment: {
-    create: new CreateAppointmentUseCase(appointmentRepository),
+    create: new CreateAppointmentUseCase(appointmentRepository, doctorAvailabilityService.isSlotValid, appointmentAuditService.writeAudit),
     list: new ListAppointmentsUseCase(appointmentRepository),
     listByDoctorIds: new ListAppointmentsByDoctorIdsUseCase(appointmentRepository),
     findById: new FindAppointmentByIdUseCase(appointmentRepository),
     listMy: new ListMyAppointmentsUseCase(appointmentRepository),
-    cancelMy: new CancelMyAppointmentUseCase(appointmentRepository),
-    updateStatus: new UpdateAppointmentStatusUseCase(appointmentRepository),
-    updateByStaff: new UpdateAppointmentByStaffUseCase(appointmentRepository),
-    deleteByStaff: new DeleteAppointmentByStaffUseCase(appointmentRepository),
+    cancelMy: new CancelMyAppointmentUseCase(appointmentRepository, appointmentAuditService.writeAudit),
+    updateStatus: new UpdateAppointmentStatusUseCase(appointmentRepository, appointmentAuditService.writeAudit),
+    updateByStaff: new UpdateAppointmentByStaffUseCase(appointmentRepository, doctorAvailabilityService.isSlotValid, appointmentAuditService.writeAudit),
+    deleteByStaff: new DeleteAppointmentByStaffUseCase(appointmentRepository, appointmentAuditService.writeAudit),
   },
   doctorProfile: {
     getMy: new GetMyDoctorProfileUseCase(doctorProfileRepository),
     upsertMy: new UpsertMyDoctorProfileUseCase(doctorProfileRepository),
   },
+  doctorAvailability: doctorAvailabilityService,
+  doctorService: doctorServiceService,
+  appointmentAudit: appointmentAuditService,
+  fresh: freshService,
   doctorStaffAssignment: {
     listAssignableStaff: new ListAssignableStaffUseCase(userRepository),
     listAssignedStaffForDoctor: new ListAssignedStaffForDoctorUseCase(

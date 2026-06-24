@@ -7,6 +7,7 @@ type Props = { dict: Dictionary; locale: string };
 
 export function HomeTestimonials({ dict, locale }: Props) {
   const quotes = dict.home.testimonials;
+  const testimonialImages = ["/testimonials/Patient1.png", "/testimonials/Patient2.png"];
 
   return (
     <section className="bg-clinic-teal px-4 py-14 text-white lg:px-8">
@@ -15,6 +16,7 @@ export function HomeTestimonials({ dict, locale }: Props) {
         <div className="mt-4">
           <SimpleCarousel
             slides={quotes.map((quote, index) => ({
+              image: testimonialImages[index] ?? testimonialImages[0],
               title: `Patient ${index + 1}`,
               description: quote,
             }))}

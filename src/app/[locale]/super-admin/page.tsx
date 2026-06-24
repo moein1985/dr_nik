@@ -21,7 +21,7 @@ export default async function SuperAdminPage({ params }: Props) {
     <main className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
       <h1 className="text-3xl font-bold text-slate-900">{dict.dashboard.superAdminTitle}</h1>
       <p className="mt-3 text-sm text-slate-600">{dict.dashboard.superAdminSubtitle}</p>
-      <SuperAdminDashboardPanel dict={dict} />
+      <SuperAdminDashboardPanel dict={dict} locale={localeCode} />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
+  appointmentWriteProcedure,
   createTRPCRouter,
   patientProcedure,
   staffProcedure,
@@ -74,7 +75,7 @@ export const appointmentRouter = createTRPCRouter({
         ...input,
         createdByUserId: ctx.userId,
         doctorUserId: input.doctorUserId || undefined,
-      });
+      }, ctx.userRole);
 
       const recipients = await resolveNotificationRecipients();
       await services.staffEmail.notify.execute({
@@ -108,6 +109,10 @@ export const appointmentRouter = createTRPCRouter({
     }),
 
   list: staffProcedure.input(staffListInput.optional()).query(async ({ ctx, input }) => {
+    if (ctx.userRole === "SUPER_ADMIN") {
+      return services.appointment.list.execute();
+    }
+
     if (ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN") {
       return services.appointment.listByDoctorIds.execute([ctx.userId]);
     }
@@ -127,7 +132,7 @@ export const appointmentRouter = createTRPCRouter({
     return services.appointment.listByDoctorIds.execute(doctorIds);
   }),
 
-  createByStaff: staffProcedure
+  createByStaff: appointmentWriteProcedure
     .input(createByStaffInput)
     .mutation(async ({ ctx, input }) => {
       const limit = services.security.rateLimiter.check(
@@ -169,7 +174,7 @@ export const appointmentRouter = createTRPCRouter({
         notes: input.notes,
         createdByUserId: ctx.userId,
         doctorUserId,
-      });
+      }, ctx.userRole);
 
       const recipients = await resolveNotificationRecipients();
       await services.staffEmail.notify.execute({
@@ -188,18 +193,18 @@ export const appointmentRouter = createTRPCRouter({
       return appointment;
     }),
 
-  updateStatus: staffProcedure
+  updateStatus: appointmentWriteProcedure
     .input(
       z.object({
         id: z.string().uuid(),
         status: appointmentStatusSchema,
       }),
     )
-    .mutation(async ({ input }) => {
-      return services.appointment.updateStatus.execute(input.id, input.status);
+    .mutation(async ({ ctx, input }) => {
+      return services.appointment.updateStatus.execute(input.id, input.status, ctx.userId, ctx.userRole);
     }),
 
-  deleteByStaff: staffProcedure
+  deleteByStaff: appointmentWriteProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -226,11 +231,11 @@ export const appointmentRouter = createTRPCRouter({
         }
       }
 
-      await services.appointment.deleteByStaff.execute(input.id);
+      await services.appointment.deleteByStaff.execute(input.id, ctx.userId, ctx.userRole);
       return { ok: true };
     }),
 
-  updateByStaff: staffProcedure
+  updateByStaff: appointmentWriteProcedure
     .input(updateByStaffInput)
     .mutation(async ({ ctx, input }) => {
       const existing = await services.appointment.findById.execute(input.id);
@@ -267,6 +272,6 @@ export const appointmentRouter = createTRPCRouter({
         requestedAt: input.requestedAt,
         serviceName: input.serviceName,
         notes: input.notes,
-      });
+      }, ctx.userId, ctx.userRole);
     }),
 });

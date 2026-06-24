@@ -34,14 +34,6 @@ export default async function ServiceDetailPage({ params }: Props) {
     redirect(`/${localeCode}/services/dental`);
   }
 
-  if (slug === "skin-rejuvenation") {
-    redirect(`/${localeCode}/services/skin-rejuvenation`);
-  }
-
-  if (slug === "body-contouring") {
-    redirect(`/${localeCode}/services/body-contouring`);
-  }
-
   const service = getServiceBySlug(localeCode, slug);
 
   if (!service) {

@@ -14,6 +14,7 @@ enum UserRole {
   ADMIN
   DOCTOR
   SUPER_ADMIN
+  CONTENT_MANAGER
 }
 
 enum AppointmentStatus {
@@ -40,6 +41,11 @@ model User {
   doctorStaffAssignmentsAsStaff  DoctorStaffAssignment[] @relation("StaffAssignments")
   chatSessionsAsPatient ChatSession[] @relation("ChatSessionPatient")
   chatSessionsAsDoctor  ChatSession[] @relation("ChatSessionDoctor")
+  doctorAvailability    DoctorAvailability[] @relation("DoctorAvailability")
+  doctorServices        DoctorService[] @relation("DoctorServices")
+  freshPosts            FreshPost[] @relation("FreshPostAuthor")
+  freshLikes            FreshLike[] @relation("FreshLikes")
+  freshComments         FreshComment[] @relation("FreshComments")
 }
 
 model DoctorProfile {
@@ -60,6 +66,34 @@ model DoctorProfile {
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model DoctorAvailability {
+  id           String   @id @default(uuid())
+  doctorUserId String
+  weekday      Int
+  startMinute  Int
+  endMinute    Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  doctor       User     @relation("DoctorAvailability", fields: [doctorUserId], references: [id], onDelete: Cascade)
+
+  @@index([doctorUserId, weekday, isActive])
+}
+
+model DoctorService {
+  id           String   @id @default(uuid())
+  doctorUserId String
+  serviceKey   String
+  serviceLabel String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  doctor       User     @relation("DoctorServices", fields: [doctorUserId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorUserId, serviceKey])
+  @@index([doctorUserId, isActive])
+}
+
 model Appointment {
   id              String            @id @default(uuid())
   createdByUserId String
@@ -74,10 +108,27 @@ model Appointment {
   createdAt       DateTime          @default(now())
   createdBy       User              @relation("AppointmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
   doctor          User?             @relation("AppointmentDoctor", fields: [doctorUserId], references: [id], onDelete: SetNull)
+  auditLogs       AppointmentAuditLog[]
 
   @@index([createdByUserId])
   @@index([doctorUserId])
   @@index([requestedAt])
+}
+
+model AppointmentAuditLog {
+  id            String      @id @default(uuid())
+  appointmentId String?
+  action        String
+  actorUserId   String
+  actorRole     UserRole
+  beforeJson    String?
+  afterJson     String?
+  createdAt     DateTime    @default(now())
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([appointmentId])
+  @@index([actorUserId])
 }
 
 model DoctorStaffAssignment {
@@ -188,4 +239,47 @@ model ChatMessage {
 
   @@index([sessionId, role])
   @@index([createdAt])
+}
+
+model FreshPost {
+  id           String         @id @default(uuid())
+  authorUserId String
+  mediaType    String
+  mediaUrl     String
+  caption      String?
+  status       String         @default("PUBLISHED")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  author       User           @relation("FreshPostAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  likes        FreshLike[]
+  comments     FreshComment[]
+
+  @@index([authorUserId])
+  @@index([status, createdAt])
+}
+
+model FreshLike {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime  @default(now())
+  post      FreshPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation("FreshLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model FreshComment {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime  @default(now())
+  post      FreshPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation("FreshComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
 }
