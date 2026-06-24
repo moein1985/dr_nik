@@ -169,10 +169,10 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
       {/* Modal for post details */}
       {selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedPost(null)}>
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold">{selectedPost.author.username ?? "User"}</h2>
-              <button onClick={() => setSelectedPost(null)} className="text-2xl">&times;</button>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedPost.author.username ?? "User"}</h2>
+              <button onClick={() => setSelectedPost(null)} className="text-2xl text-gray-900 dark:text-white">&times;</button>
             </div>
 
             {selectedPost.mediaType === "IMAGE" ? (
@@ -181,9 +181,9 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
               <video src={selectedPost.mediaUrl} className="mb-4 w-full rounded" controls />
             )}
 
-            {selectedPost.caption && <p className="mb-4">{selectedPost.caption}</p>}
+            {selectedPost.caption && <p className="mb-4 text-gray-900 dark:text-white">{selectedPost.caption}</p>}
 
-            <div className="mb-4 flex gap-4 text-sm text-muted-foreground">
+            <div className="mb-4 flex gap-4 text-sm text-gray-600 dark:text-gray-400">
               <span>❤️ {selectedPost.likes.length} {t("likes")}</span>
               <span>💬 {selectedPost.comments.length} {t("comments")}</span>
             </div>
@@ -195,30 +195,30 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
               {t("like")}
             </button>
 
-            <div className="mb-4 border-t pt-4">
-              <h3 className="mb-3 font-semibold">{t("comments")}</h3>
+            <div className="mb-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">{t("comments")}</h3>
               <div className="space-y-3">
                 {selectedPost.comments.map((comment) => (
-                  <div key={comment.id} className="rounded bg-muted/20 p-3">
+                  <div key={comment.id} className="rounded bg-gray-100 p-3 dark:bg-gray-800">
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-sm font-medium">{comment.user.username ?? "User"}</span>
-                      <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{comment.user.username ?? "User"}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{formatDate(comment.createdAt)}</span>
                     </div>
-                    <p className="text-sm">{comment.content}</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{comment.content}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="border-t pt-4">
-              <h3 className="mb-2 font-semibold">{t("addComment")}</h3>
+            <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+              <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">{t("addComment")}</h3>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder={t("writeComment")}
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2"
+                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       void handleComment(selectedPost.id);

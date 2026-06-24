@@ -115,6 +115,18 @@ export class FreshRepository {
     });
   }
 
+  async listAll(limit = 50): Promise<FreshPost[]> {
+    return this.prisma.freshPost.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+    });
+  }
+
   async listByAuthor(authorUserId: string): Promise<FreshPost[]> {
     return this.prisma.freshPost.findMany({
       where: { authorUserId },
@@ -182,5 +194,55 @@ export class FreshRepository {
     }
 
     await this.prisma.freshComment.delete({ where: { id: commentId } });
+  }
+
+  async updateComment(commentId: string, data: { content: string }): Promise<{ id: string }> {
+    const comment = await this.prisma.freshComment.update({
+      where: { id: commentId },
+      data,
+    });
+    return { id: comment.id };
+  }
+
+  async deleteCommentByAdmin(commentId: string): Promise<void> {
+    await this.prisma.freshComment.delete({ where: { id: commentId } });
+  }
+
+  async listAllComments(filters: { postId?: string; userId?: string; limit: number }): Promise<Array<{
+    id: string;
+    content: string;
+    userId: string;
+    username: string | null;
+    postId: string;
+    postCaption: string | null;
+    createdAt: Date;
+  }>> {
+    const where: any = {};
+    if (filters.postId) where.postId = filters.postId;
+    if (filters.userId) where.userId = filters.userId;
+
+    const comments = await this.prisma.freshComment.findMany({
+      where,
+      take: filters.limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { username: true },
+        },
+        post: {
+          select: { caption: true },
+        },
+      },
+    });
+
+    return comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      userId: comment.userId,
+      username: comment.user.username,
+      postId: comment.postId,
+      postCaption: comment.post.caption,
+      createdAt: comment.createdAt,
+    }));
   }
 }

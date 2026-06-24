@@ -10,7 +10,7 @@ import { services } from "@/server/shared/service-container";
 
 const createPostInput = z.object({
   mediaType: z.enum(["IMAGE", "VIDEO"]),
-  mediaUrl: z.string().url(),
+  mediaUrl: z.string().min(1),
   caption: z.string().max(500).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
 });
@@ -18,7 +18,7 @@ const createPostInput = z.object({
 const updatePostInput = z.object({
   id: z.string().uuid(),
   mediaType: z.enum(["IMAGE", "VIDEO"]).optional(),
-  mediaUrl: z.string().url().optional(),
+  mediaUrl: z.string().min(1).optional(),
   caption: z.string().max(500).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
 });
@@ -28,6 +28,12 @@ export const freshRouter = createTRPCRouter({
     .input(z.object({ limit: z.number().min(1).max(100).optional() }).optional())
     .query(async ({ input }) => {
       return services.fresh.listPosts.execute(input?.limit);
+    }),
+
+  listAll: contentManagerProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).optional() }).optional())
+    .query(async ({ input }) => {
+      return services.fresh.listAllPosts.execute(input?.limit);
     }),
 
   getById: publicProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input }) => {
@@ -91,5 +97,35 @@ export const freshRouter = createTRPCRouter({
       }
 
       return services.fresh.addComment.execute(input.postId, ctx.userId, input.content);
+    }),
+
+  updateComment: contentManagerProcedure
+    .input(
+      z.object({
+        commentId: z.string().uuid(),
+        content: z.string().min(1).max(500),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return services.fresh.updateComment.execute(input.commentId, input.content);
+    }),
+
+  deleteComment: contentManagerProcedure
+    .input(z.object({ commentId: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      await services.fresh.deleteComment.execute(input.commentId);
+      return { ok: true };
+    }),
+
+  listAllComments: contentManagerProcedure
+    .input(
+      z.object({
+        postId: z.string().uuid().optional(),
+        userId: z.string().uuid().optional(),
+        limit: z.number().min(1).max(100).default(50),
+      }),
+    )
+    .query(async ({ input }) => {
+      return services.fresh.listAllComments.execute(input);
     }),
 });

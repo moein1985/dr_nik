@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import { getTRPCClient } from "@/trpc/client";
 import { getDictionary } from "@/i18n/dictionary";
+import { FileUploadSection } from "@/components/FileUploadSection";
+import { CommentsManager } from "@/components/CommentsManager";
 
 type FreshPost = {
   id: string;
@@ -27,6 +29,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<FreshPost | null>(null);
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const [formData, setFormData] = useState({
     mediaType: "IMAGE" as "IMAGE" | "VIDEO",
     mediaUrl: "",
@@ -38,6 +41,8 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
   const t = (key: string) => {
     const translations: Record<string, Record<Locale, string>> = {
       title: { fa: "مدیریت محتوای تازه‌ها", en: "Fresh Content Management", ar: "إدارة المحتوى الجديد" },
+      postsTab: { fa: "پست‌ها", en: "Posts", ar: "المشاركات" },
+      commentsTab: { fa: "کامنت‌ها", en: "Comments", ar: "التعليقات" },
       createNew: { fa: "ایجاد پست جدید", en: "Create New Post", ar: "إنشاء منشور جديد" },
       mediaType: { fa: "نوع رسانه:", en: "Media Type:", ar: "نوع الوسائط:" },
       image: { fa: "تصویر", en: "Image", ar: "صورة" },
@@ -65,7 +70,9 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
     setIsLoading(true);
     try {
       const trpc = getTRPCClient();
-      const result = await trpc.fresh.list.query({ limit: 50 });
+      console.log("Fetching posts with listAll...");
+      const result = await trpc.fresh.listAll.query({ limit: 50 });
+      console.log("Fetched posts:", result);
       setPosts(result);
     } catch (error) {
       console.error("Failed to fetch posts:", error);
@@ -96,7 +103,8 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
       void fetchPosts();
     } catch (error) {
       console.error("Failed to save post:", error);
-      alert(dict.contentManager.errorSavingPost);
+      const errorMessage = error instanceof Error ? error.message : dict.contentManager.errorSavingPost;
+      alert(errorMessage);
     }
   };
 
@@ -127,17 +135,44 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
     <div className="rounded-lg border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold">{t("title")}</h2>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditingPost(null);
-            setFormData({ mediaType: "IMAGE", mediaUrl: "", caption: "", status: "PUBLISHED" });
-          }}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          {t("createNew")}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              activeTab === 'posts' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {t("postsTab")}
+          </button>
+          <button
+            onClick={() => setActiveTab('comments')}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              activeTab === 'comments' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {t("commentsTab")}
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'posts' && (
+        <>
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={() => {
+                setShowForm(!showForm);
+                setEditingPost(null);
+                setFormData({ mediaType: "IMAGE", mediaUrl: "", caption: "", status: "PUBLISHED" });
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {t("createNew")}
+            </button>
+          </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="mb-6 rounded-md border bg-muted/20 p-4">
@@ -156,12 +191,9 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
 
             <div>
               <label className="mb-2 block text-sm font-medium">{t("mediaUrl")}</label>
-              <input
-                type="url"
-                value={formData.mediaUrl}
-                onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
-                required
-                className="w-full rounded-md border border-input bg-background px-3 py-2"
+              <FileUploadSection 
+                onUpload={(url) => setFormData({ ...formData, mediaUrl: url })}
+                currentUrl={formData.mediaUrl}
               />
             </div>
 
@@ -251,6 +283,12 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
             </div>
           ))}
         </div>
+      )}
+      </>
+      )}
+
+      {activeTab === 'comments' && (
+        <CommentsManager locale={locale} />
       )}
     </div>
   );
