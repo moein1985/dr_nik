@@ -8,6 +8,7 @@ const en = {
     services: "Services",
     doctor: "Doctor",
     gallery: "Gallery",
+    fresh: "Fresh",
     contact: "Contact",
     booking: "Book Now",
     serviceCategories: [

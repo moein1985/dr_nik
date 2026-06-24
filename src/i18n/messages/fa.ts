@@ -8,6 +8,7 @@ const fa = {
     services: "خدمات",
     doctor: "پزشک",
     gallery: "گالری",
+    fresh: "تازه‌ها",
     contact: "تماس",
     booking: "رزرو نوبت",
     serviceCategories: [

@@ -8,6 +8,7 @@ const ar = {
     services: "الخدمات",
     doctor: "الطبيب",
     gallery: "المعرض",
+    fresh: "جديد",
     contact: "التواصل",
     booking: "احجز الآن",
     serviceCategories: [

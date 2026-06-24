@@ -90,6 +90,9 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
           <Link href={`/${locale}/gallery`} className="transition hover:text-clinic-teal">
             {dict.nav.gallery}
           </Link>
+          <Link href={`/${locale}/fresh`} className="transition hover:text-clinic-teal">
+            {dict.nav.fresh}
+          </Link>
           <Link href={`/${locale}/contact`} className="transition hover:text-clinic-teal">
             {dict.nav.contact}
           </Link>
@@ -152,6 +155,9 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             </Link>
             <Link href={`/${locale}/gallery`} className="rounded-lg px-3 py-2 transition hover:bg-slate-100">
               {dict.nav.gallery}
+            </Link>
+            <Link href={`/${locale}/fresh`} className="rounded-lg px-3 py-2 transition hover:bg-slate-100">
+              {dict.nav.fresh}
             </Link>
             <Link href={`/${locale}/contact`} className="rounded-lg px-3 py-2 transition hover:bg-slate-100">
               {dict.nav.contact}
