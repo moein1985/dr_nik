@@ -40,7 +40,7 @@ export function SuperAdminDashboardPanel({ dict, locale }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"ADMIN" | "CONTENT_MANAGER" | "STAFF" | "DOCTOR">("DOCTOR");
+  const [role, setRole] = useState<"CONTENT_MANAGER" | "STAFF" | "DOCTOR">("DOCTOR");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
@@ -190,12 +190,11 @@ export function SuperAdminDashboardPanel({ dict, locale }: Props) {
               />
               <select
                 value={role}
-                onChange={(event) => setRole(event.target.value as "ADMIN" | "CONTENT_MANAGER" | "STAFF" | "DOCTOR")}
+                onChange={(event) => setRole(event.target.value as "CONTENT_MANAGER" | "STAFF" | "DOCTOR")}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 required
               >
                 <option value="DOCTOR">{dict.dashboard.roleDoctor}</option>
-                <option value="ADMIN">{dict.dashboard.roleAdmin}</option>
                 <option value="CONTENT_MANAGER">{dict.dashboard.roleContentManager}</option>
                 <option value="STAFF">{dict.dashboard.roleStaff}</option>
               </select>

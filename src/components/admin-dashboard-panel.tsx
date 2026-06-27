@@ -13,23 +13,15 @@ type User = {
   phoneNumber?: string;
   username?: string;
   email?: string;
-  role: "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
+  role: "PATIENT" | "STAFF" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
   isActive: boolean;
 };
 
 function getRoleLabel(role: User["role"]) {
-  if (role === "ADMIN") {
-    return "DOCTOR";
-  }
-
   return role;
 }
 
-function normalizeRole(role: User["role"]): Exclude<User["role"], "ADMIN"> {
-  if (role === "ADMIN") {
-    return "DOCTOR";
-  }
-
+function normalizeRole(role: User["role"]): User["role"] {
   return role;
 }
 
@@ -50,7 +42,7 @@ export function AdminDashboardPanel({ dict }: Props) {
     setLoading(true);
     try {
       const me = await trpc.auth.me.query();
-      const ok = me.role === "ADMIN" || me.role === "DOCTOR" || me.role === "SUPER_ADMIN";
+      const ok = me.role === "DOCTOR" || me.role === "SUPER_ADMIN";
       setAuthorized(ok);
 
       if (!ok) {

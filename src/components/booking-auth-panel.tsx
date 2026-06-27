@@ -10,7 +10,7 @@ type BookingAuthPanelProps = {
 };
 
 type Mode = "register" | "login" | "forgot";
-type UserRole = "PATIENT" | "STAFF" | "ADMIN" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
+type UserRole = "PATIENT" | "STAFF" | "DOCTOR" | "SUPER_ADMIN" | "CONTENT_MANAGER";
 type AppointmentSummaryItem = {
   requestedAt: Date | string;
   status: "PENDING" | "CONFIRMED" | "CANCELLED";
@@ -38,7 +38,6 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
   const rolePaths: Record<UserRole, string> = {
     PATIENT: "patient",
     STAFF: "staff",
-    ADMIN: "admin",
     DOCTOR: "admin",
     SUPER_ADMIN: "super-admin",
     CONTENT_MANAGER: "content-manager",
@@ -47,7 +46,6 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
   const roleLabels: Record<UserRole, string> = {
     PATIENT: dict.auth.rolePatient,
     STAFF: dict.auth.roleStaff,
-    ADMIN: dict.auth.roleAdmin,
     DOCTOR: dict.auth.roleDoctor,
     SUPER_ADMIN: dict.auth.roleSuperAdmin,
     CONTENT_MANAGER: dict.auth.roleContentManager,
@@ -499,7 +497,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
           </a>
         )}
 
-        {(currentUserRole === "STAFF" || currentUserRole === "ADMIN" || currentUserRole === "DOCTOR" || currentUserRole === "SUPER_ADMIN") && (
+        {(currentUserRole === "STAFF" || currentUserRole === "DOCTOR" || currentUserRole === "SUPER_ADMIN") && (
           <a
             href={`/${locale}/staff`}
             className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
@@ -508,7 +506,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
           </a>
         )}
 
-        {(currentUserRole === "ADMIN" || currentUserRole === "DOCTOR" || currentUserRole === "SUPER_ADMIN") && (
+        {(currentUserRole === "DOCTOR" || currentUserRole === "SUPER_ADMIN") && (
           <a
             href={`/${locale}/admin`}
             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"

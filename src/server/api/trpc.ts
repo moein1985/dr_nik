@@ -82,11 +82,10 @@ const requireRole = (roles: UserRole[]) =>
   });
 
 export const superAdminProcedure = requireRole(["SUPER_ADMIN"]);
-export const adminProcedure = requireRole(["DOCTOR", "ADMIN", "SUPER_ADMIN"]);
-export const doctorProcedure = requireRole(["DOCTOR", "ADMIN", "SUPER_ADMIN"]);
-export const staffProcedure = requireRole(["STAFF", "DOCTOR", "ADMIN", "SUPER_ADMIN"]);
+export const doctorProcedure = requireRole(["DOCTOR", "SUPER_ADMIN"]);
+export const staffProcedure = requireRole(["STAFF", "DOCTOR", "SUPER_ADMIN"]);
 export const contentManagerProcedure = requireRole(["CONTENT_MANAGER", "SUPER_ADMIN"]);
 // Appointment mutations are restricted to operational roles only.
 // SUPER_ADMIN has read-only visibility and must not create/edit/delete appointments.
-export const appointmentWriteProcedure = requireRole(["STAFF", "DOCTOR", "ADMIN"]);
+export const appointmentWriteProcedure = requireRole(["STAFF", "DOCTOR"]);
 export const patientProcedure = requireRole(["PATIENT"]);

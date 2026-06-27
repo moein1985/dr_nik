@@ -2,7 +2,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomUUID } from "crypto";
 import {
-  adminProcedure,
   createTRPCRouter,
   doctorProcedure,
   protectedProcedure,
@@ -22,7 +21,7 @@ const createPrivilegedUserInput = z
     email: z.string().trim().email(),
     password: z.string().min(6),
     confirmPassword: z.string().min(6),
-    role: z.enum(["ADMIN", "CONTENT_MANAGER", "STAFF", "DOCTOR"]).optional(),
+    role: z.enum(["CONTENT_MANAGER", "STAFF", "DOCTOR"]).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -204,7 +203,7 @@ export const authRouter = createTRPCRouter({
       });
     }),
 
-  adminHeartbeat: adminProcedure.query(async ({ ctx }) => {
+  adminHeartbeat: doctorProcedure.query(async ({ ctx }) => {
     return {
       ok: true,
       userId: ctx.userId,
@@ -212,7 +211,7 @@ export const authRouter = createTRPCRouter({
     };
   }),
 
-  createStaff: adminProcedure
+  createStaff: doctorProcedure
     .input(createPrivilegedUserInput)
     .mutation(async ({ input }) => {
       return services.auth.createStaff.execute({
@@ -233,11 +232,11 @@ export const authRouter = createTRPCRouter({
       });
     }),
 
-  listUsers: adminProcedure.query(async () => {
+  listUsers: doctorProcedure.query(async () => {
     return services.auth.listUsers.execute();
   }),
 
-  setUserActive: adminProcedure
+  setUserActive: doctorProcedure
     .input(
       z.object({
         userId: z.string().uuid(),
@@ -248,11 +247,11 @@ export const authRouter = createTRPCRouter({
       return services.auth.setUserActive.execute(input);
     }),
 
-  setUserRole: adminProcedure
+  setUserRole: doctorProcedure
     .input(
       z.object({
         userId: z.string().uuid(),
-        role: z.enum(["PATIENT", "STAFF", "ADMIN", "DOCTOR", "CONTENT_MANAGER"]),
+        role: z.enum(["PATIENT", "STAFF", "DOCTOR", "CONTENT_MANAGER"]),
       }),
     )
     .mutation(async ({ input }) => {
@@ -320,14 +319,14 @@ export const authRouter = createTRPCRouter({
       return services.doctorStaffAssignment.listDoctorsForStaff.execute(ctx.userId);
     }
 
-    if (ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN") {
+    if (ctx.userRole === "DOCTOR") {
       const me = await services.auth.getPublicUser.execute(ctx.userId);
       return me ? [me] : [];
     }
 
     if (ctx.userRole === "SUPER_ADMIN") {
       const users = await services.auth.listUsers.execute();
-      return users.filter((user) => (user.role === "DOCTOR" || user.role === "ADMIN") && user.isActive);
+      return users.filter((user) => user.role === "DOCTOR" && user.isActive);
     }
 
     return [];
@@ -418,7 +417,7 @@ export const authRouter = createTRPCRouter({
   listActiveDoctors: publicProcedure.query(async () => {
     return services.auth.listUsers.execute().then((users) =>
       users
-        .filter((u) => u.isActive && (u.role === "DOCTOR" || u.role === "ADMIN"))
+        .filter((u) => u.isActive && u.role === "DOCTOR")
         .map((u) => ({
           id: u.id,
           username: u.username ?? AUTH_MESSAGES.DEFAULT_DOCTOR_NAME,

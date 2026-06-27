@@ -10,7 +10,7 @@ export class AssignStaffToDoctorUseCase {
 
   async execute(doctorUserId: string, staffUserId: string): Promise<DoctorStaffAssignment> {
     const doctor = await this.users.findById(doctorUserId);
-    if (!doctor || (doctor.role !== "DOCTOR" && doctor.role !== "ADMIN")) {
+    if (!doctor || doctor.role !== "DOCTOR") {
       throw new Error("Doctor user not found");
     }
 

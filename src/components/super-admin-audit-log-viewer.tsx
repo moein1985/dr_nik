@@ -25,7 +25,6 @@ const getActionLabel = (action: string, locale: string): string => {
 const roleLabels: Record<string, { fa: string; en: string; ar: string }> = {
   PATIENT: { fa: "بیمار", en: "Patient", ar: "مريض" },
   STAFF: { fa: "کارمند", en: "Staff", ar: "موظف" },
-  ADMIN: { fa: "ادمین", en: "Admin", ar: "مشرف" },
   DOCTOR: { fa: "پزشک", en: "Doctor", ar: "طبيب" },
   SUPER_ADMIN: { fa: "سوپرادمین", en: "Super Admin", ar: "مشرف عام" },
 };

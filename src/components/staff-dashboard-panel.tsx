@@ -85,7 +85,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
   const scopeCopy = getScopeCopy(locale);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const [userRole, setUserRole] = useState<"STAFF" | "DOCTOR" | "ADMIN" | "SUPER_ADMIN" | null>(null);
+  const [userRole, setUserRole] = useState<"STAFF" | "DOCTOR" | "SUPER_ADMIN" | null>(null);
   const [doctorScopes, setDoctorScopes] = useState<DoctorScope[]>([]);
   const [selectedDoctorUserId, setSelectedDoctorUserId] = useState<string>("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -159,9 +159,9 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     setLoading(true);
     try {
       const me = await trpc.auth.me.query();
-      const ok = me.role === "STAFF" || me.role === "DOCTOR" || me.role === "ADMIN" || me.role === "SUPER_ADMIN";
+      const ok = me.role === "STAFF" || me.role === "DOCTOR" || me.role === "SUPER_ADMIN";
       setAuthorized(ok);
-      setUserRole(ok ? (me.role as "STAFF" | "DOCTOR" | "ADMIN" | "SUPER_ADMIN") : null);
+      setUserRole(ok ? (me.role as "STAFF" | "DOCTOR" | "SUPER_ADMIN") : null);
 
       if (!ok) {
         setLoading(false);
@@ -471,7 +471,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
               }}
               title={scopeCopy.doctorScopeLabel}
               className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-              disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
+              disabled={userRole === "DOCTOR"}
             >
               {doctorScopes.map((doctor) => (
                 <option key={doctor.id} value={doctor.id}>
@@ -615,7 +615,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
                                   aria-label={scopeCopy.doctorScopeLabel}
                                   title={scopeCopy.doctorScopeLabel}
                                   className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
-                                  disabled={userRole === "DOCTOR" || userRole === "ADMIN"}
+                                  disabled={userRole === "DOCTOR"}
                                 >
                                   {doctorScopes.map((doctor) => (
                                     <option key={doctor.id} value={doctor.id}>

@@ -15,7 +15,7 @@ export class ListDoctorsForStaffUseCase {
 
     for (const row of rows) {
       const user = await this.users.findById(row.doctorUserId);
-      if (user && (user.role === "DOCTOR" || user.role === "ADMIN") && user.isActive) {
+      if (user && user.role === "DOCTOR" && user.isActive) {
         doctors.push(toPublicUser(user));
       }
     }

@@ -157,7 +157,7 @@ export function DoctorDashboardPanel({ dict, locale }: Props) {
 
     try {
       const me = await trpc.auth.me.query();
-      const isDoctor = me.role === "DOCTOR" || me.role === "ADMIN" || me.role === "SUPER_ADMIN";
+      const isDoctor = me.role === "DOCTOR" || me.role === "SUPER_ADMIN";
       setAuthorized(isDoctor);
 
       if (!isDoctor) {

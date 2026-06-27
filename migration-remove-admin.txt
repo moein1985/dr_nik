@@ -1,0 +1,22 @@
+-- Migration: Remove ADMIN role, convert all ADMIN users to DOCTOR
+-- Run this on the LXC PostgreSQL database
+
+-- Step 1: Update all ADMIN users to DOCTOR
+UPDATE "User" SET role = 'DOCTOR' WHERE role = 'ADMIN';
+
+-- Step 2: Remove default, recreate enum, update all tables
+ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "Session" ALTER COLUMN "userRole" TYPE TEXT;
+ALTER TABLE "AppointmentAuditLog" ALTER COLUMN "actorRole" TYPE TEXT;
+
+ALTER TYPE "UserRole" RENAME TO "UserRole_old";
+
+CREATE TYPE "UserRole" AS ENUM ('PATIENT', 'STAFF', 'DOCTOR', 'SUPER_ADMIN', 'CONTENT_MANAGER');
+
+ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole" USING "role"::text::"UserRole";
+ALTER TABLE "Session" ALTER COLUMN "userRole" TYPE "UserRole" USING "userRole"::text::"UserRole";
+ALTER TABLE "AppointmentAuditLog" ALTER COLUMN "actorRole" TYPE "UserRole" USING "actorRole"::text::"UserRole";
+
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'PATIENT';
+
+DROP TYPE "UserRole_old";

@@ -33,7 +33,7 @@ async function resolveNotificationRecipients() {
     .filter(
       (user) =>
         user.isActive &&
-        (user.role === "STAFF" || user.role === "DOCTOR" || user.role === "ADMIN" || user.role === "SUPER_ADMIN"),
+        (user.role === "STAFF" || user.role === "DOCTOR" || user.role === "SUPER_ADMIN"),
     )
     .map((user) => user.email?.trim().toLowerCase())
     .filter((email): email is string => Boolean(email));
@@ -107,7 +107,7 @@ export const appointmentRouter = createTRPCRouter({
       return services.appointment.list.execute();
     }
 
-    if (ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN") {
+    if (ctx.userRole === "DOCTOR") {
       return services.appointment.listByDoctorIds.execute([ctx.userId]);
     }
 
@@ -157,7 +157,7 @@ export const appointmentRouter = createTRPCRouter({
       }
 
       const doctorUserId =
-        ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN" ? ctx.userId : inputDoctorUserId;
+        ctx.userRole === "DOCTOR" ? ctx.userId : inputDoctorUserId;
 
       const appointment = await services.appointment.create.execute({
         patientName: input.patientName,
@@ -231,7 +231,7 @@ export const appointmentRouter = createTRPCRouter({
       }
 
       const targetDoctorUserId =
-        ctx.userRole === "DOCTOR" || ctx.userRole === "ADMIN"
+        ctx.userRole === "DOCTOR"
           ? ctx.userId
           : (input.doctorUserId ?? existing.doctorUserId);
 

@@ -7,7 +7,7 @@ export type CreateAdminInput = {
   username: string;
   email: string;
   password: string;
-  role?: "ADMIN" | "CONTENT_MANAGER" | "STAFF" | "DOCTOR";
+  role?: "CONTENT_MANAGER" | "STAFF" | "DOCTOR";
 };
 
 export class CreateAdminUseCase {

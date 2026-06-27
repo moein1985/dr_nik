@@ -1,0 +1,18 @@
+-- Fix: Update any remaining ADMIN values in all tables before converting
+
+-- Update any ADMIN values in Session
+UPDATE "Session" SET "userRole" = 'DOCTOR' WHERE "userRole" = 'ADMIN';
+
+-- Update any ADMIN values in AppointmentAuditLog
+UPDATE "AppointmentAuditLog" SET "actorRole" = 'DOCTOR' WHERE "actorRole" = 'ADMIN';
+
+-- Update any ADMIN values in User (just in case)
+UPDATE "User" SET role = 'DOCTOR' WHERE role = 'ADMIN';
+
+-- Now convert columns to the new enum
+ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole" USING "role"::text::"UserRole";
+ALTER TABLE "Session" ALTER COLUMN "userRole" TYPE "UserRole" USING "userRole"::text::"UserRole";
+ALTER TABLE "AppointmentAuditLog" ALTER COLUMN "actorRole" TYPE "UserRole" USING "actorRole"::text::"UserRole";
+
+-- Restore default
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'PATIENT';

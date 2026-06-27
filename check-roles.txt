@@ -1,0 +1,3 @@
+SELECT DISTINCT "actorRole" FROM "AppointmentAuditLog";
+SELECT DISTINCT role FROM "User";
+SELECT DISTINCT "userRole" FROM "Session";
