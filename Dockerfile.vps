@@ -1,8 +1,8 @@
 # Stage 1: install all deps (including dev) for build
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install --registry=https://npm.iranserver.com
+COPY package.json package-lock.json* ./
+RUN npm install --registry=https://registry.npmmirror.com
 
 # Stage 2: build Next.js
 FROM node:20-alpine AS builder
@@ -10,6 +10,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY src/ ./src/
 COPY public/ ./public/
+COPY prisma/ ./prisma/
 COPY next.config.ts tsconfig.json tailwind.config.ts postcss.config.js global.d.ts next-env.d.ts package.json ./
 ENV DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dr_nik_clinic
 ENV SMTP_HOST=mailpit
@@ -17,15 +18,16 @@ ENV SMTP_PORT=1025
 ENV SMTP_SECURE=false
 ENV STAFF_NOTIFICATION_EMAIL=staff@drnikclinic.local
 ENV NODE_ENV=production
-RUN npm run build
+RUN npx prisma generate && npm run build
 
-# Stage 3: lean production runner
+# Stage 3: production runner (no network access needed)
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-COPY package.json ./
-RUN npm install --omit=dev --registry=https://npm.iranserver.com
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]

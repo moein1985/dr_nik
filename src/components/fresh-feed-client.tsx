@@ -10,6 +10,13 @@ type FreshFeedClientProps = {
   locale: Locale;
 };
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 export function FreshFeedClient({ locale }: FreshFeedClientProps) {
   const [posts, setPosts] = useState<FreshPostWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +77,7 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
             const isLiked = post.likes.some((like) => like.userId === currentUser?.id);
             const updatedLikes = isLiked
               ? post.likes.filter((like) => like.userId !== currentUser?.id)
-              : [...post.likes, { id: crypto.randomUUID(), userId: currentUser?.id || "" }];
+              : [...post.likes, { id: generateId(), userId: currentUser?.id || "" }];
             return {
               ...post,
               likes: updatedLikes,
@@ -109,7 +116,7 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
               comments: [
                 ...post.comments,
                 {
-                  id: crypto.randomUUID(),
+                  id: generateId(),
                   userId: currentUser?.id || "",
                   content,
                   user: { id: currentUser?.id || "", username: currentUser?.username || null, avatarUrl: currentUser?.avatarUrl ?? null },

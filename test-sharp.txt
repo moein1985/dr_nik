@@ -1,0 +1,2 @@
+const sharp = require("sharp");
+sharp({create:{width:100,height:100,background:"red"}}).jpeg().toBuffer().then(b=>console.log("sharp process OK, size:",b.length)).catch(e=>console.log("sharp FAIL:",e.message));

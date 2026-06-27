@@ -1,9 +1,11 @@
 services:
   app:
-    image: dr_nik_clinic-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.vps
+    image: dr_nik_clinic:latest
     container_name: dr_nik_clinic_app
     restart: unless-stopped
-    command: sh -c "npm run prisma:migrate:deploy && npm run start"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dr_nik_clinic
       SMTP_HOST: mailpit
