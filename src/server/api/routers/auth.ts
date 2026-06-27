@@ -8,6 +8,7 @@ import {
   protectedProcedure,
   publicProcedure,
   superAdminProcedure,
+  contentManagerProcedure,
 } from "@/server/api/trpc";
 import { services } from "@/server/shared/service-container";
 import { prisma } from "@/server/shared/prisma-client";
@@ -425,5 +426,23 @@ export const authRouter = createTRPCRouter({
         }))
         .sort((a, b) => (a.username ?? "").localeCompare(b.username ?? "")),
     );
+  }),
+
+  updateAvatar: contentManagerProcedure
+    .input(z.object({ avatarUrl: z.string().max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { avatarUrl: input.avatarUrl || null },
+      });
+      return { ok: true };
+    }),
+
+  getMyAvatar: contentManagerProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { avatarUrl: true },
+    });
+    return { avatarUrl: user?.avatarUrl ?? null };
   }),
 });

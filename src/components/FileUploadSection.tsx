@@ -5,10 +5,11 @@ import { Upload, X } from 'lucide-react';
 
 interface FileUploadSectionProps {
   onUpload: (url: string) => void;
+  onMediaTypeChange?: (mediaType: "IMAGE" | "VIDEO") => void;
   currentUrl?: string;
 }
 
-export function FileUploadSection({ onUpload, currentUrl }: FileUploadSectionProps) {
+export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: FileUploadSectionProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
 
@@ -31,6 +32,10 @@ export function FileUploadSection({ onUpload, currentUrl }: FileUploadSectionPro
       if (data.url) {
         setPreview(data.url);
         onUpload(data.url);
+        if (onMediaTypeChange) {
+          const isVideo = file.type.startsWith('video/');
+          onMediaTypeChange(isVideo ? 'VIDEO' : 'IMAGE');
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -38,7 +43,7 @@ export function FileUploadSection({ onUpload, currentUrl }: FileUploadSectionPro
     } finally {
       setUploading(false);
     }
-  }, [onUpload]);
+  }, [onUpload, onMediaTypeChange]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

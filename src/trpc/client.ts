@@ -1,6 +1,6 @@
 "use client";
 
-import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { createTRPCProxyClient, httpLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "@/server/api/root";
 
@@ -10,7 +10,7 @@ export function getTRPCClient() {
   if (!client) {
     client = createTRPCProxyClient<AppRouter>({
       links: [
-        httpBatchLink({
+        httpLink({
           url: "/api/trpc",
           transformer: superjson,
         }),

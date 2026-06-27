@@ -6,6 +6,7 @@ import { getTRPCClient } from "@/trpc/client";
 import { getDictionary } from "@/i18n/dictionary";
 import { FileUploadSection } from "@/components/FileUploadSection";
 import { CommentsManager } from "@/components/CommentsManager";
+import Avatar from "./fresh/Avatar";
 
 type FreshPost = {
   id: string;
@@ -29,7 +30,9 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<FreshPost | null>(null);
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'profile'>('posts');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [formData, setFormData] = useState({
     mediaType: "IMAGE" as "IMAGE" | "VIDEO",
     mediaUrl: "",
@@ -57,6 +60,10 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
       cancel: { fa: "انصراف", en: "Cancel", ar: "إلغاء" },
       edit: { fa: "ویرایش", en: "Edit", ar: "تعديل" },
       delete: { fa: "حذف", en: "Delete", ar: "حذف" },
+      avatar: { fa: "عکس پروفایل", en: "Profile Picture", ar: "صورة الملف الشخصي" },
+      avatarSaved: { fa: "عکس پروفایل با موفقیت ذخیره شد", en: "Avatar saved successfully", ar: "تم حفظ الصورة بنجاح" },
+      avatarError: { fa: "خطا در ذخیره عکس پروفایل", en: "Failed to save avatar", ar: "فشل حفظ الصورة" },
+      profileTab: { fa: "پروفایل", en: "Profile", ar: "الملف الشخصي" },
       loading: { fa: "در حال بارگذاری...", en: "Loading...", ar: "جاري التحميل..." },
       noPosts: { fa: "هیچ پستی یافت نشد", en: "No posts found", ar: "لم يتم العثور على منشورات" },
       likes: { fa: "لایک", en: "Likes", ar: "إعجابات" },
@@ -81,8 +88,19 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
     }
   };
 
+  const fetchAvatar = async () => {
+    try {
+      const trpc = getTRPCClient();
+      const result = await trpc.auth.getMyAvatar.query();
+      setAvatarUrl(result.avatarUrl);
+    } catch (error) {
+      console.error("Failed to fetch avatar:", error);
+    }
+  };
+
   useEffect(() => {
     void fetchPosts();
+    void fetchAvatar();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,6 +165,16 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
             {t("postsTab")}
           </button>
           <button
+            onClick={() => setActiveTab('profile')}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              activeTab === 'profile'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {t("profileTab")}
+          </button>
+          <button
             onClick={() => setActiveTab('comments')}
             className={`rounded-md px-4 py-2 text-sm font-medium ${
               activeTab === 'comments' 
@@ -193,6 +221,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
               <label className="mb-2 block text-sm font-medium">{t("mediaUrl")}</label>
               <FileUploadSection 
                 onUpload={(url) => setFormData({ ...formData, mediaUrl: url })}
+                onMediaTypeChange={(mediaType) => setFormData({ ...formData, mediaType })}
                 currentUrl={formData.mediaUrl}
               />
             </div>
@@ -285,6 +314,49 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
         </div>
       )}
       </>
+      )}
+
+      {activeTab === 'profile' && (
+        <div className="max-w-md space-y-4">
+          <h3 className="text-lg font-semibold">{t("avatar")}</h3>
+          <div className="flex items-center gap-4">
+            <Avatar username={undefined} imageUrl={avatarUrl ?? undefined} size={80} />
+            {avatarUrl ? (
+              <button
+                onClick={() => {
+                  setAvatarUrl(null);
+                  setAvatarUploading(true);
+                  const trpc = getTRPCClient();
+                  trpc.auth.updateAvatar.mutate({ avatarUrl: "" }).catch(() => {});
+                  setAvatarUploading(false);
+                }}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+              >
+                {t("delete")}
+              </button>
+            ) : null}
+          </div>
+          <FileUploadSection
+            onUpload={async (url) => {
+              setAvatarUploading(true);
+              try {
+                const trpc = getTRPCClient();
+                await trpc.auth.updateAvatar.mutate({ avatarUrl: url });
+                setAvatarUrl(url);
+              } catch (error) {
+                console.error("Failed to save avatar:", error);
+                alert(t("avatarError"));
+              } finally {
+                setAvatarUploading(false);
+              }
+            }}
+            currentUrl={avatarUrl ?? undefined}
+          />
+          {avatarUploading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
+          {avatarUrl && !avatarUploading && (
+            <p className="text-sm text-green-600">{t("avatarSaved")}</p>
+          )}
+        </div>
       )}
 
       {activeTab === 'comments' && (

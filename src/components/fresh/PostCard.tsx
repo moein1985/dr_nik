@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 import Avatar from './Avatar';
 import CommentSection from './CommentSection';
@@ -9,6 +9,7 @@ interface PostCardProps {
     author: {
       id: string;
       username: string | null;
+      avatarUrl?: string | null;
     };
     mediaType: string;
     mediaUrl: string;
@@ -18,7 +19,8 @@ interface PostCardProps {
     comments: Array<{
       id: string;
       content: string;
-      user: { id: string; username: string | null };
+      userId: string;
+      user: { id: string; username: string | null; avatarUrl?: string | null };
       createdAt: Date;
     }>;
     _count?: {
@@ -46,6 +48,26 @@ const PostCard: React.FC<PostCardProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting && !video.paused) {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.25 },
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
 
   const handleLike = () => {
     setIsLikedState(!isLikedState);
@@ -85,7 +107,7 @@ const PostCard: React.FC<PostCardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-3">
-          <Avatar username={post.author.username || undefined} size={40} />
+          <Avatar username={post.author.username || undefined} imageUrl={post.author.avatarUrl ?? undefined} size={40} />
           <div>
             <p className="font-semibold text-gray-900 dark:text-white text-sm">
               {post.author.username || 'Unknown User'}
@@ -110,9 +132,11 @@ const PostCard: React.FC<PostCardProps> = ({
           />
         ) : (
           <video
+            ref={videoRef}
             src={post.mediaUrl}
             className="w-full max-h-[600px] object-cover"
             controls
+            playsInline
           />
         )}
       </div>

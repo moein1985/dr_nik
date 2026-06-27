@@ -6,7 +6,8 @@ interface CommentSectionProps {
   comments: Array<{
     id: string;
     content: string;
-    user: { id: string; username: string | null };
+    userId: string;
+    user: { id: string; username: string | null; avatarUrl?: string | null };
     createdAt: Date;
   }>;
   totalComments: number;
@@ -14,6 +15,7 @@ interface CommentSectionProps {
   currentUser?: {
     id: string;
     username: string | null;
+    avatarUrl?: string | null;
   };
 }
 
@@ -65,7 +67,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         <>
           {displayedComments.map((comment) => (
             <div key={comment.id} className="flex gap-2 mb-2">
-              <Avatar username={comment.user.username || undefined} size={24} />
+              <Avatar username={comment.user.username || undefined} imageUrl={comment.user.avatarUrl ?? undefined} size={24} />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {comment.user.username || 'Unknown User'}
@@ -102,7 +104,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       {/* Comment Input */}
       <div className="flex gap-2 items-center mt-2">
-        <Avatar username={currentUser?.username || undefined} size={24} />
+        <Avatar username={currentUser?.username || undefined} imageUrl={currentUser?.avatarUrl ?? undefined} size={24} />
         <input
           type="text"
           value={commentText}

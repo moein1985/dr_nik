@@ -13,7 +13,8 @@ type FreshFeedClientProps = {
 export function FreshFeedClient({ locale }: FreshFeedClientProps) {
   const [posts, setPosts] = useState<FreshPostWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<{ id: string; username: string | null } | undefined>();
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string | null; avatarUrl: string | null } | undefined>();
+  const [loginPrompt, setLoginPrompt] = useState(false);
 
   const t = (key: string) => {
     const translations: Record<string, Record<Locale, string>> = {
@@ -32,6 +33,7 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
       setCurrentUser({
         id: result.id,
         username: result.username ?? null,
+        avatarUrl: (result as { avatarUrl?: string | null }).avatarUrl ?? null,
       });
     } catch (error) {
       // User not logged in
@@ -44,21 +46,7 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
     try {
       const trpc = getTRPCClient();
       const result = await trpc.fresh.list.query({ limit: 50 });
-      
-      // Fetch details for each post to get author, likes, and comments
-      const postsWithDetails = await Promise.all(
-        result.map(async (post) => {
-          try {
-            const details = await trpc.fresh.getById.query({ id: post.id });
-            return details as FreshPostWithDetails;
-          } catch (error) {
-            console.error(`Failed to fetch details for post ${post.id}:`, error);
-            return post as unknown as FreshPostWithDetails;
-          }
-        })
-      );
-      
-      setPosts(postsWithDetails);
+      setPosts(result as FreshPostWithDetails[]);
     } catch (error) {
       console.error("Failed to fetch posts:", error);
     } finally {
@@ -67,6 +55,11 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
   };
 
   const handleLike = async (postId: string) => {
+    if (!currentUser) {
+      setLoginPrompt(true);
+      setTimeout(() => setLoginPrompt(false), 3000);
+      return;
+    }
     try {
       const trpc = getTRPCClient();
       await trpc.fresh.toggleLike.mutate({ postId });
@@ -92,13 +85,18 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
       );
     } catch (error) {
       console.error("Failed to toggle like:", error);
-      alert(t("loginRequired"));
-      // Revert on error
+      // Don't show alert - the operation might have succeeded on server
+      // Just refresh to get the correct state
       void fetchPosts();
     }
   };
 
   const handleComment = async (postId: string, content: string) => {
+    if (!currentUser) {
+      setLoginPrompt(true);
+      setTimeout(() => setLoginPrompt(false), 3000);
+      return;
+    }
     try {
       const trpc = getTRPCClient();
       await trpc.fresh.addComment.mutate({ postId, content });
@@ -114,7 +112,7 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
                   id: crypto.randomUUID(),
                   userId: currentUser?.id || "",
                   content,
-                  user: { id: currentUser?.id || "", username: currentUser?.username || null },
+                  user: { id: currentUser?.id || "", username: currentUser?.username || null, avatarUrl: currentUser?.avatarUrl ?? null },
                   createdAt: new Date(),
                 },
               ],
@@ -129,7 +127,9 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
       );
     } catch (error) {
       console.error("Failed to add comment:", error);
-      alert(t("loginRequired"));
+      // Don't show alert - the operation might have succeeded on server
+      // Just refresh to get the correct state
+      void fetchPosts();
     }
   };
 
@@ -142,6 +142,12 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6">
       <div className="max-w-[600px] mx-auto px-4">
         <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+
+        {loginPrompt && (
+          <div className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+            {t("loginRequired")}
+          </div>
+        )}
 
         {isLoading ? (
           <p className="text-center text-gray-600 dark:text-gray-400">{t("loading")}</p>

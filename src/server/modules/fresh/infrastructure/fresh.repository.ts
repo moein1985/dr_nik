@@ -21,6 +21,7 @@ export type FreshPostWithDetails = FreshPost & {
   author: {
     id: string;
     username: string | null;
+    avatarUrl: string | null;
   };
   likes: Array<{
     id: string;
@@ -34,6 +35,7 @@ export type FreshPostWithDetails = FreshPost & {
     user: {
       id: string;
       username: string | null;
+      avatarUrl: string | null;
     };
   }>;
 };
@@ -79,7 +81,7 @@ export class FreshRepository {
       where: { id },
       include: {
         author: {
-          select: { id: true, username: true },
+          select: { id: true, username: true, avatarUrl: true },
         },
         likes: {
           select: { id: true, userId: true },
@@ -91,7 +93,7 @@ export class FreshRepository {
             content: true,
             createdAt: true,
             user: {
-              select: { id: true, username: true },
+              select: { id: true, username: true, avatarUrl: true },
             },
           },
           orderBy: { createdAt: "desc" },
@@ -103,12 +105,30 @@ export class FreshRepository {
     });
   }
 
-  async listPublished(limit = 50): Promise<FreshPost[]> {
+  async listPublished(limit = 50): Promise<FreshPostWithDetails[]> {
     return this.prisma.freshPost.findMany({
       where: { status: "PUBLISHED" },
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
+        author: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+        likes: {
+          select: { id: true, userId: true },
+        },
+        comments: {
+          select: {
+            id: true,
+            userId: true,
+            content: true,
+            createdAt: true,
+            user: {
+              select: { id: true, username: true, avatarUrl: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
         _count: {
           select: { likes: true, comments: true },
         },
