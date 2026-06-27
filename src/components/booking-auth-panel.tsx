@@ -464,9 +464,16 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
   const signedInActions = currentUserRole ? (
     <div className="grid gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-emerald-800">{dict.auth.sessionActiveLabel}</p>
-          <p className="mt-1 text-sm text-emerald-700">{dict.auth.signedInAs} {roleLabels[currentUserRole]}.</p>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-6 w-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-sm font-bold text-emerald-900">{dict.auth.loggedInBanner}</p>
+            <p className="mt-0.5 text-sm text-emerald-700">{dict.auth.signedInAs} {roleLabels[currentUserRole]}.</p>
+          </div>
         </div>
         <button
           type="button"

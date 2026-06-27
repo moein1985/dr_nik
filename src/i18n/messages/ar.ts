@@ -149,6 +149,7 @@ const ar = {
     sessionActiveLabel: "جلسة نشطة",
     sessionChecking: "جار التحقق من حالة تسجيل الدخول...",
     signedInAs: "أنت مسجل الدخول بصلاحية",
+    loggedInBanner: "أنت مسجل الدخول",
     rolePatient: "مريض",
     roleStaff: "موظف",
     roleDoctor: "طبيب",

@@ -149,6 +149,7 @@ const en = {
     sessionActiveLabel: "Active session",
     sessionChecking: "Checking your session status...",
     signedInAs: "You are signed in as",
+    loggedInBanner: "You are logged in",
     rolePatient: "patient",
     roleStaff: "staff",
     roleDoctor: "doctor",

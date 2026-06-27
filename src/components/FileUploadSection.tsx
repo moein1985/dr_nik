@@ -27,15 +27,20 @@ export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: F
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await response.json();
-      if (data.url) {
+      if (!response.ok) {
+        const errorMsg = data.error || `خطا در آپلود فایل (${response.status})`;
+        alert(errorMsg);
+      } else if (data.url) {
         setPreview(data.url);
         onUpload(data.url);
         if (onMediaTypeChange) {
           const isVideo = file.type.startsWith('video/');
           onMediaTypeChange(isVideo ? 'VIDEO' : 'IMAGE');
         }
+      } else {
+        alert('پاسخ آپلود نامعتبر است');
       }
     } catch (error) {
       console.error('Upload error:', error);
