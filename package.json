@@ -15,6 +15,9 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "smoke": "pwsh -ExecutionPolicy Bypass -File ./scripts/smoke-tests.ps1",
+    "smoke:fresh": "pwsh -ExecutionPolicy Bypass -File ./scripts/smoke-tests-fresh.ps1",
+    "smoke:all-pages": "playwright test tests/e2e/all-pages-smoke.spec.ts",
+    "pre-deploy": "pwsh -ExecutionPolicy Bypass -File ./scripts/pre-deploy-check.ps1",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
