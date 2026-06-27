@@ -139,35 +139,39 @@ export function FreshFeedClient({ locale }: FreshFeedClientProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6">
-      <div className="max-w-[600px] mx-auto px-4">
-        <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-
-        {loginPrompt && (
-          <div className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+    <>
+      {loginPrompt && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-6 py-4 text-sm text-amber-800 dark:text-amber-200 shadow-lg">
             {t("loginRequired")}
           </div>
-        )}
+        </div>
+      )}
 
-        {isLoading ? (
-          <p className="text-center text-gray-600 dark:text-gray-400">{t("loading")}</p>
-        ) : posts.length === 0 ? (
-          <p className="text-center text-gray-600 dark:text-gray-400">{t("noPosts")}</p>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={handleLike}
-                onComment={handleComment}
-                currentUser={currentUser}
-                isLiked={post.likes.some((like) => like.userId === currentUser?.id)}
-              />
-            ))}
-          </div>
-        )}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-6">
+        <div className="max-w-[600px] mx-auto px-4">
+          <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+
+          {isLoading ? (
+            <p className="text-center text-gray-600 dark:text-gray-400">{t("loading")}</p>
+          ) : posts.length === 0 ? (
+            <p className="text-center text-gray-600 dark:text-gray-400">{t("noPosts")}</p>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  currentUser={currentUser}
+                  isLiked={post.likes.some((like) => like.userId === currentUser?.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
