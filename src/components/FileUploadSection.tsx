@@ -1,6 +1,5 @@
 "use client";
-import { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useRef, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 
 interface FileUploadSectionProps {
@@ -12,13 +11,16 @@ interface FileUploadSectionProps {
 export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: FileUploadSectionProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
+  const handleFile = async (file: File) => {
     if (!file) return;
 
     setUploading(true);
-    
+    setUploadError(null);
+    console.log('[Upload] Starting upload for:', file.name, 'size:', file.size, 'type:', file.type);
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -28,11 +30,17 @@ export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: F
         body: formData,
       });
 
+      console.log('[Upload] Response status:', response.status);
       const data = await response.json();
+      console.log('[Upload] Response data:', data);
+
       if (!response.ok) {
         const errorMsg = data.error || `خطا در آپلود فایل (${response.status})`;
+        setUploadError(errorMsg);
         alert(errorMsg);
-      } else if (data.url) {
+        return;
+      }
+      if (data.url) {
         setPreview(data.url);
         onUpload(data.url);
         if (onMediaTypeChange) {
@@ -40,28 +48,25 @@ export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: F
           onMediaTypeChange(isVideo ? 'VIDEO' : 'IMAGE');
         }
       } else {
-        alert('پاسخ آپلود نامعتبر است');
+        setUploadError('پاسخ آپلود نامعتبر است: URL دریافت نشد');
+        alert('پاسخ آپلود نامعتبر است: URL دریافت نشد');
+        return;
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('خطا در آپلود فایل');
+      console.error('[Upload] Error:', error);
+      setUploadError('خطا در ارتباط با سرور');
+      alert('خطا در ارتباط با سرور: ' + String(error));
+      return;
     } finally {
       setUploading(false);
     }
-  }, [onUpload, onMediaTypeChange]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
-      'video/*': ['.mp4', '.webm', '.mov']
-    },
-    maxFiles: 1,
-    maxSize: 50 * 1024 * 1024 // 50MB
-  });
+  };
 
   return (
     <div className="space-y-4">
+      {uploadError && (
+        <p className="text-sm text-red-600">{uploadError}</p>
+      )}
       {preview ? (
         <div className="relative">
           {preview.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
@@ -81,11 +86,20 @@ export function FileUploadSection({ onUpload, onMediaTypeChange, currentUrl }: F
         </div>
       ) : (
         <div
-          {...getRootProps()}
+          onClick={() => inputRef.current?.click()}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition
-            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+            ${uploading ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
         >
-          <input {...getInputProps()} />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
           <Upload className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-2 text-sm text-gray-600">
             {uploading ? 'در حال آپلود...' : 'فایل را اینجا بکشید یا کلیک کنید'}

@@ -86,7 +86,7 @@ async function getQuotaUsage(patientUserId: string, doctorUserId: string): Promi
       INNER JOIN "ChatSession" cs ON cm."sessionId" = cs."id"
       WHERE cs."patientUserId" = ${patientUserId}
         AND cs."doctorUserId" = ${doctorUserId}
-        AND cm."role" = 'user'
+        AND cm."role" = 'USER'
     `;
 
     return result[0]?.count ? Number(result[0].count) : 0;
@@ -99,9 +99,10 @@ async function getQuotaUsage(patientUserId: string, doctorUserId: string): Promi
 async function recordChatMessage(sessionId: string, role: "user" | "assistant", content: string) {
   try {
     const id = require("crypto").randomUUID();
+    const enumRole = role.toUpperCase();
     await prisma.$executeRaw`
       INSERT INTO "ChatMessage" ("id", "sessionId", "role", "content", "createdAt")
-      VALUES (${id}, ${sessionId}, ${role}, ${content}, now())
+      VALUES (${id}, ${sessionId}, ${enumRole}::"ChatMessageRole", ${content}, now())
     `;
     return true;
   } catch (err) {
@@ -447,7 +448,7 @@ export const aiRouter = createTRPCRouter({
 
         return messages.map((msg) => ({
           id: msg.id,
-          role: msg.role,
+          role: msg.role.toLowerCase(),
           content: msg.content,
           createdAt: new Date(msg.createdAt),
         }));

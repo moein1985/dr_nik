@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
     await mkdir(uploadDir, { recursive: true });
     
     // Generate unique filename
-    const ext = file.name.split('.').pop() || 'bin';
+    const originalExt = file.name.split('.').pop() || 'bin';
+    const isImage = file.type.startsWith('image/');
+    // sharp converts all images to JPEG, so use .jpg extension for images
+    const ext = isImage ? 'jpg' : originalExt;
     const filename = `${crypto.randomUUID()}.${ext}`;
     const filepath = join(uploadDir, filename);
     

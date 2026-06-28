@@ -1,0 +1,48 @@
+-- CreateEnum
+CREATE TYPE "public"."ChatSessionStatus" AS ENUM ('ACTIVE', 'CLOSED', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "public"."FreshPostStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "public"."ChatMessageRole" AS ENUM ('USER', 'ASSISTANT', 'SYSTEM');
+
+-- AlterEnum
+BEGIN;
+CREATE TYPE "public"."UserRole_new" AS ENUM ('PATIENT', 'STAFF', 'DOCTOR', 'SUPER_ADMIN', 'CONTENT_MANAGER');
+ALTER TABLE "public"."User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "public"."User" ALTER COLUMN "role" TYPE "public"."UserRole_new" USING ("role"::text::"public"."UserRole_new");
+ALTER TABLE "public"."AppointmentAuditLog" ALTER COLUMN "actorRole" TYPE "public"."UserRole_new" USING ("actorRole"::text::"public"."UserRole_new");
+ALTER TABLE "public"."Session" ALTER COLUMN "userRole" TYPE "public"."UserRole_new" USING ("userRole"::text::"public"."UserRole_new");
+ALTER TYPE "public"."UserRole" RENAME TO "UserRole_old";
+ALTER TYPE "public"."UserRole_new" RENAME TO "UserRole";
+DROP TYPE "public"."UserRole_old";
+ALTER TABLE "public"."User" ALTER COLUMN "role" SET DEFAULT 'PATIENT';
+COMMIT;
+
+-- AlterTable
+ALTER TABLE "public"."ChatMessage" DROP COLUMN "role",
+ADD COLUMN     "role" "public"."ChatMessageRole" NOT NULL;
+
+-- AlterTable
+ALTER TABLE "public"."ChatSession" DROP COLUMN "status",
+ADD COLUMN     "status" "public"."ChatSessionStatus" NOT NULL DEFAULT 'ACTIVE';
+
+-- AlterTable
+ALTER TABLE "public"."FreshPost" DROP COLUMN "status",
+ADD COLUMN     "status" "public"."FreshPostStatus" NOT NULL DEFAULT 'PUBLISHED';
+
+-- AlterTable
+ALTER TABLE "public"."User" ADD COLUMN     "avatarUrl" TEXT;
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Appointment_status_requestedAt_idx" ON "public"."Appointment"("status", "requestedAt");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ChatMessage_sessionId_role_idx" ON "public"."ChatMessage"("sessionId", "role");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ChatSession_status_idx" ON "public"."ChatSession"("status");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "FreshPost_status_createdAt_idx" ON "public"."FreshPost"("status", "createdAt");
