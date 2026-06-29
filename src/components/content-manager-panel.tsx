@@ -209,7 +209,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
               <label className="mb-2 block text-sm font-medium">{t("mediaType")}</label>
               <select
                 value={formData.mediaType}
-                onChange={(e) => setFormData({ ...formData, mediaType: e.target.value as "IMAGE" | "VIDEO" })}
+                onChange={(e) => setFormData(prev => ({ ...prev, mediaType: e.target.value as "IMAGE" | "VIDEO" }))}
                 className="w-full rounded-md border border-input bg-background px-3 py-2"
               >
                 <option value="IMAGE">{t("image")}</option>
@@ -220,8 +220,8 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
             <div>
               <label className="mb-2 block text-sm font-medium">{t("mediaUrl")}</label>
               <FileUploadSection 
-                onUpload={(url) => setFormData({ ...formData, mediaUrl: url })}
-                onMediaTypeChange={(mediaType) => setFormData({ ...formData, mediaType })}
+                onUpload={(url) => setFormData(prev => ({ ...prev, mediaUrl: url }))}
+                onMediaTypeChange={(mediaType) => setFormData(prev => ({ ...prev, mediaType }))}
                 currentUrl={formData.mediaUrl}
               />
             </div>
@@ -230,7 +230,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
               <label className="mb-2 block text-sm font-medium">{t("caption")}</label>
               <textarea
                 value={formData.caption}
-                onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, caption: e.target.value }))}
                 maxLength={500}
                 rows={3}
                 className="w-full rounded-md border border-input bg-background px-3 py-2"
@@ -241,7 +241,7 @@ export function ContentManagerPanel({ locale }: ContentManagerPanelProps) {
               <label className="mb-2 block text-sm font-medium">{t("status")}</label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as "DRAFT" | "PUBLISHED" | "ARCHIVED" })}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as "DRAFT" | "PUBLISHED" | "ARCHIVED" }))}
                 className="w-full rounded-md border border-input bg-background px-3 py-2"
               >
                 <option value="DRAFT">{t("draft")}</option>

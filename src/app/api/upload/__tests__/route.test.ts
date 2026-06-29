@@ -78,7 +78,7 @@ describe('POST /api/upload', () => {
     expect(response.status).toBe(200);
     expect(data.url).toBeDefined();
     expect(data.filename).toBeDefined();
-    expect(data.url).toMatch(/^\/uploads\/\d{4}-\d{2}-\d{2}\//);
+    expect(data.url).toMatch(/^\/api\/uploads\/\d{4}-\d{2}-\d{2}\//);
   });
 
   it('should accept valid video file', async () => {
