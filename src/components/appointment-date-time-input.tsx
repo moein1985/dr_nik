@@ -47,6 +47,11 @@ export function AppointmentDateTimeInput({ locale, dict, valueIso, onChangeIso }
     setJalaliTime(`${String(parsedDate.getUTCHours()).padStart(2, "0")}:${String(parsedDate.getUTCMinutes()).padStart(2, "0")}`);
   }, [locale, parsedDate]);
 
+  const minDatetimeValue = useMemo(() => {
+    const now = new Date();
+    return toDatetimeLocalValue(now);
+  }, []);
+
   if (locale !== "fa") {
     return (
       <input
@@ -54,6 +59,7 @@ export function AppointmentDateTimeInput({ locale, dict, valueIso, onChangeIso }
         lang={inputLang}
         dir={locale === "ar" ? "rtl" : "ltr"}
         value={parsedDate ? toDatetimeLocalValue(parsedDate) : ""}
+        min={minDatetimeValue}
         onChange={(event) => {
           const next = parseGregorianDatetimeLocal(event.target.value);
           onChangeIso(next ? next.toISOString() : "");

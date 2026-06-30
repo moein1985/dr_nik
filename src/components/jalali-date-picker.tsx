@@ -31,7 +31,7 @@ export function JalaliDatePicker({ value, onChange, placeholder }: Props) {
 
   const todayJalali = useMemo(() => {
     const now = new Date();
-    return toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    return toJalaali(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
   }, []);
 
   const [viewYear, setViewYear] = useState(todayJalali.jy);
@@ -79,11 +79,12 @@ export function JalaliDatePicker({ value, onChange, placeholder }: Props) {
 
   const firstDayWeekday = useMemo(() => {
     const gregorian = toGregorian(viewYear, viewMonth, 1);
-    const date = new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
-    return date.getDay();
+    const date = new Date(Date.UTC(gregorian.gy, gregorian.gm - 1, gregorian.gd));
+    return date.getUTCDay();
   }, [viewYear, viewMonth]);
 
   function selectDay(day: number) {
+    if (isPastDay(day)) return;
     const dateStr = `${viewYear}/${pad2(viewMonth)}/${pad2(day)}`;
     onChange(dateStr);
     setOpen(false);
@@ -119,6 +120,14 @@ export function JalaliDatePicker({ value, onChange, placeholder }: Props) {
   const isToday = (day: number) =>
     todayJalali.jy === viewYear && todayJalali.jm === viewMonth && todayJalali.jd === day;
 
+  const isPastDay = (day: number) => {
+    if (todayJalali.jy > viewYear) return true;
+    if (todayJalali.jy < viewYear) return false;
+    if (todayJalali.jm > viewMonth) return true;
+    if (todayJalali.jm < viewMonth) return false;
+    return day < todayJalali.jd;
+  };
+
   return (
     <div ref={containerRef} className="relative">
       <input
@@ -147,17 +156,21 @@ export function JalaliDatePicker({ value, onChange, placeholder }: Props) {
               const day = i + 1;
               const isSelected = selectedDay === day;
               const today = isToday(day);
+              const past = isPastDay(day);
               return (
                 <button
                   key={day}
                   type="button"
                   onClick={() => selectDay(day)}
+                  disabled={past}
                   className={`rounded-lg py-1.5 text-sm transition ${
-                    isSelected
-                      ? "bg-cyan-600 text-white"
-                      : today
-                        ? "bg-cyan-50 font-bold text-cyan-700 hover:bg-cyan-100"
-                        : "hover:bg-slate-100"
+                    past
+                      ? "cursor-not-allowed text-slate-300"
+                      : isSelected
+                        ? "bg-cyan-600 text-white"
+                        : today
+                          ? "bg-cyan-50 font-bold text-cyan-700 hover:bg-cyan-100"
+                          : "hover:bg-slate-100"
                   }`}
                 >
                   {toPersianDigits(String(day))}

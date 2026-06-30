@@ -34,6 +34,8 @@ describe("JalaliDatePicker (Bug 2)", () => {
     render(<JalaliDatePicker value="" onChange={onChange} placeholder="select" />);
     const input = screen.getByPlaceholderText("select");
     fireEvent.click(input);
+    // Navigate to next month to ensure day is not in the past
+    fireEvent.click(screen.getByText(">"));
     // Click on day 15
     const dayButton = screen.getByText("۱۵");
     fireEvent.click(dayButton);
@@ -45,6 +47,8 @@ describe("JalaliDatePicker (Bug 2)", () => {
     render(<JalaliDatePicker value="" onChange={onChange} placeholder="select" />);
     const input = screen.getByPlaceholderText("select");
     fireEvent.click(input);
+    // Navigate to next month to ensure day is not in the past
+    fireEvent.click(screen.getByText(">"));
     const dayButton = screen.getByText("۱");
     fireEvent.click(dayButton);
     // Calendar should be closed - navigation buttons should not be visible
@@ -71,8 +75,9 @@ describe("JalaliDatePicker (Bug 2)", () => {
   });
 
   it("should highlight selected day", () => {
-    render(<JalaliDatePicker value="1405/03/15" onChange={vi.fn()} placeholder="select" />);
-    const input = screen.getByDisplayValue("۱۴۰۵/۰۳/۱۵");
+    // Use a future month to avoid past-date disabling
+    render(<JalaliDatePicker value="1405/07/15" onChange={vi.fn()} placeholder="select" />);
+    const input = screen.getByDisplayValue("۱۴۰۵/۰۷/۱۵");
     fireEvent.click(input);
     const selectedDay = screen.getByText("۱۵");
     expect(selectedDay).toHaveClass("bg-cyan-600");

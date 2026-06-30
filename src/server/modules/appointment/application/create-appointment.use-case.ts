@@ -15,6 +15,12 @@ export class CreateAppointmentUseCase {
   ) {}
 
   async execute(input: CreateAppointmentInput, actorRole: UserRole): Promise<Appointment> {
+    const now = new Date();
+    const todayUtcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    if (input.requestedAt.getTime() < todayUtcMidnight) {
+      throw new Error("Cannot book an appointment in the past");
+    }
+
     if (input.doctorUserId && this.isSlotValid) {
       const isValid = await this.isSlotValid.execute(input.doctorUserId, input.requestedAt);
       if (!isValid) {
