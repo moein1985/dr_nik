@@ -47,6 +47,7 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
   const [serviceName, setServiceName] = useState("");
   const [requestedAtIso, setRequestedAtIso] = useState("");
   const [notes, setNotes] = useState("");
+  const [doctorServices, setDoctorServices] = useState<Array<{ serviceKey: string; serviceLabel: string; isActive: boolean }>>([]);
   const [aiText, setAiText] = useState("");
   const [aiImageUrl, setAiImageUrl] = useState("");
   const [aiReply, setAiReply] = useState("");
@@ -54,15 +55,9 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; role: string; content: string; createdAt: Date }>>([]);
 
-  const quickServiceOptions = useMemo(
-    () => [
-      "فیشیال",
-      "لیزر",
-      "جوانسازی پوست",
-      "تزریق بوتاکس",
-      "کانتورینگ بدن",
-    ],
-    [],
+  const activeDoctorServices = useMemo(
+    () => doctorServices.filter((s) => s.isActive),
+    [doctorServices],
   );
 
   const selectedDoctor = useMemo(() => doctors.find((d) => d.id === selectedDoctorId), [doctors, selectedDoctorId]);
@@ -145,10 +140,23 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
     }
   }
 
-  // Load chat history when doctor selection changes
+  // Load chat history and doctor services when doctor selection changes
   useEffect(() => {
     void loadChatHistory(selectedDoctorId);
-  }, [selectedDoctorId]);
+    if (selectedDoctorId) {
+      void (async () => {
+        try {
+          const services = await trpc.doctorService.listForDoctor.query({ doctorUserId: selectedDoctorId });
+          setDoctorServices(services as Array<{ serviceKey: string; serviceLabel: string; isActive: boolean }>);
+        } catch {
+          setDoctorServices([]);
+        }
+      })();
+    } else {
+      setDoctorServices([]);
+    }
+    setServiceName("");
+  }, [selectedDoctorId, trpc]);
 
   useEffect(() => {
     void load();
@@ -287,26 +295,22 @@ export function PatientDashboardPanel({ dict, locale }: Props) {
             required
           />
           <p className="md:col-span-2 mt-1 text-xs font-semibold text-slate-500">{dict.dashboard.formStepAppointmentInfo}</p>
-          <input
+          <select
             value={serviceName}
             onChange={(e) => setServiceName(e.target.value)}
-            placeholder={dict.dashboard.serviceName}
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
             required
-          />
-          <div className="md:col-span-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-500">{dict.dashboard.quickServiceLabel}</span>
-            {quickServiceOptions.map((service) => (
-              <button
-                key={service}
-                type="button"
-                onClick={() => setServiceName(service)}
-                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
-              >
-                {service}
-              </button>
+            disabled={activeDoctorServices.length === 0}
+          >
+            <option value="">
+              {activeDoctorServices.length === 0 ? dict.dashboard.noServicesForDoctor : dict.dashboard.selectService}
+            </option>
+            {activeDoctorServices.map((service) => (
+              <option key={service.serviceKey} value={service.serviceLabel}>
+                {service.serviceLabel}
+              </option>
             ))}
-          </div>
+          </select>
           <div className="flex items-center gap-2">
             <select
               value={selectedDoctorId}

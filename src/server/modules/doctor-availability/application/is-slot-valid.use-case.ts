@@ -10,8 +10,8 @@ export class IsSlotValidUseCase {
       return false;
     }
 
-    const weekday = requestedAt.getDay();
-    const minuteOfDay = requestedAt.getHours() * 60 + requestedAt.getMinutes();
+    const weekday = requestedAt.getUTCDay();
+    const minuteOfDay = requestedAt.getUTCHours() * 60 + requestedAt.getUTCMinutes();
 
     const matchingSlot = slots.find(
       (slot) =>

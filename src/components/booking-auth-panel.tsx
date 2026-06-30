@@ -55,6 +55,7 @@ export function BookingAuthPanel({ dict, locale }: BookingAuthPanelProps) {
     new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US", {
       dateStyle: "medium",
       timeStyle: "short",
+      timeZone: "UTC",
     }).format(value);
 
   async function loadPatientSummary() {

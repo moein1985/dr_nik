@@ -11,6 +11,7 @@ export function formatLocalizedDate(locale: Locale, date: Date) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   }).format(date);
 }
 
@@ -19,22 +20,26 @@ function pad2(value: number) {
 }
 
 export function toDatetimeLocalValue(date: Date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}T${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}`;
 }
 
 export function toJalaliDateString(date: Date) {
-  const jalali = toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  const jalali = toJalaali(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
   return `${jalali.jy}/${pad2(jalali.jm)}/${pad2(jalali.jd)}`;
 }
 
 export function parseGregorianDatetimeLocal(value: string) {
   const parsed = new Date(value);
-
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
-
-  return parsed;
+  return new Date(Date.UTC(
+    parsed.getFullYear(),
+    parsed.getMonth(),
+    parsed.getDate(),
+    parsed.getHours(),
+    parsed.getMinutes(),
+  ));
 }
 
 export function parseJalaliDateTime(dateValue: string, timeValue: string) {
@@ -66,5 +71,5 @@ export function parseJalaliDateTime(dateValue: string, timeValue: string) {
   }
 
   const gregorian = toGregorian(jy, jm, jd);
-  return new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd, hours, minutes, 0, 0);
+  return new Date(Date.UTC(gregorian.gy, gregorian.gm - 1, gregorian.gd, hours, minutes, 0, 0));
 }

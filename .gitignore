@@ -9,6 +9,9 @@
 .env*
 !.env.example
 
+# user uploads
+/public/uploads/
+
 # misc
 .DS_Store
 npm-debug.log*

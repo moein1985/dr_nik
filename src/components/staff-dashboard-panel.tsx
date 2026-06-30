@@ -102,6 +102,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
   const [serviceName, setServiceName] = useState("");
   const [requestedAtIso, setRequestedAtIso] = useState("");
   const [notes, setNotes] = useState("");
+  const [doctorServices, setDoctorServices] = useState<Array<{ serviceKey: string; serviceLabel: string; isActive: boolean }>>([]);
   
   // Media creation states
   const [mediaTitle, setMediaTitle] = useState("");
@@ -205,6 +206,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
 
   useEffect(() => {
     if (!selectedDoctorUserId) {
+      setDoctorServices([]);
       return;
     }
 
@@ -212,7 +214,16 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
     if (selected) {
       setDoctorName(getDoctorScopeLabel(selected));
     }
-  }, [selectedDoctorUserId, doctorScopes]);
+
+    void (async () => {
+      try {
+        const services = await trpc.doctorService.listForDoctor.query({ doctorUserId: selectedDoctorUserId });
+        setDoctorServices(services as Array<{ serviceKey: string; serviceLabel: string; isActive: boolean }>);
+      } catch {
+        setDoctorServices([]);
+      }
+    })();
+  }, [selectedDoctorUserId, doctorScopes, trpc]);
 
   async function handleDoctorScopeChange(doctorUserId: string) {
     setSelectedDoctorUserId(doctorUserId);
@@ -400,7 +411,7 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
 
   function openCreateAt(date: Date) {
     const defaultTime = new Date(date);
-    defaultTime.setHours(9, 0, 0, 0);
+    defaultTime.setUTCHours(9, 0, 0, 0);
     setRequestedAtIso(defaultTime.toISOString());
     setActiveTab("create");
   }
@@ -517,7 +528,22 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
             <input value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder={dict.dashboard.patientName} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
             <input value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder={dict.dashboard.patientPhone} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
             <input value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder={dict.dashboard.doctorName} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
-            <input value={serviceName} onChange={(e) => setServiceName(e.target.value)} placeholder={dict.dashboard.serviceName} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
+            <select
+              value={serviceName}
+              onChange={(e) => setServiceName(e.target.value)}
+              className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              required
+              disabled={doctorServices.filter((s) => s.isActive).length === 0}
+            >
+              <option value="">
+                {doctorServices.filter((s) => s.isActive).length === 0 ? dict.dashboard.noServicesForDoctor : dict.dashboard.selectService}
+              </option>
+              {doctorServices.filter((s) => s.isActive).map((service) => (
+                <option key={service.serviceKey} value={service.serviceLabel}>
+                  {service.serviceLabel}
+                </option>
+              ))}
+            </select>
             <AppointmentDateTimeInput
               locale={locale}
               dict={dict}
@@ -624,7 +650,22 @@ export function StaffDashboardPanel({ dict, locale }: Props) {
                                   ))}
                                 </select>
                                 <input value={editDoctorName} onChange={(event) => setEditDoctorName(event.target.value)} placeholder={dict.dashboard.doctorName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
-                                <input value={editServiceName} onChange={(event) => setEditServiceName(event.target.value)} placeholder={dict.dashboard.serviceName} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs" required />
+                                <select
+                                  value={editServiceName}
+                                  onChange={(event) => setEditServiceName(event.target.value)}
+                                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+                                  required
+                                  disabled={doctorServices.filter((s) => s.isActive).length === 0}
+                                >
+                                  <option value="">
+                                    {doctorServices.filter((s) => s.isActive).length === 0 ? dict.dashboard.noServicesForDoctor : dict.dashboard.selectService}
+                                  </option>
+                                  {doctorServices.filter((s) => s.isActive).map((service) => (
+                                    <option key={service.serviceKey} value={service.serviceLabel}>
+                                      {service.serviceLabel}
+                                    </option>
+                                  ))}
+                                </select>
                                 <AppointmentDateTimeInput locale={locale} dict={dict} valueIso={editRequestedAtIso} onChangeIso={setEditRequestedAtIso} />
                                 <textarea value={editNotes} onChange={(event) => setEditNotes(event.target.value)} placeholder={dict.dashboard.notes} className="md:col-span-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" rows={2} />
                                 <div className="md:col-span-2 flex gap-2">

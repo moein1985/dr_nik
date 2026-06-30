@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
+import { JalaliDatePicker } from "@/components/jalali-date-picker";
 import {
   parseGregorianDatetimeLocal,
   parseJalaliDateTime,
@@ -43,7 +44,7 @@ export function AppointmentDateTimeInput({ locale, dict, valueIso, onChangeIso }
     }
 
     setJalaliDate(toJalaliDateString(parsedDate));
-    setJalaliTime(`${String(parsedDate.getHours()).padStart(2, "0")}:${String(parsedDate.getMinutes()).padStart(2, "0")}`);
+    setJalaliTime(`${String(parsedDate.getUTCHours()).padStart(2, "0")}:${String(parsedDate.getUTCMinutes()).padStart(2, "0")}`);
   }, [locale, parsedDate]);
 
   if (locale !== "fa") {
@@ -68,19 +69,14 @@ export function AppointmentDateTimeInput({ locale, dict, valueIso, onChangeIso }
   return (
     <div className="grid gap-2">
       <div className="grid gap-2 md:grid-cols-2">
-        <input
+        <JalaliDatePicker
           value={jalaliDate}
-          onChange={(event) => {
-            const nextDate = event.target.value;
+          onChange={(nextDate) => {
             setJalaliDate(nextDate);
             const parsed = parseJalaliDateTime(nextDate, jalaliTime);
             onChangeIso(parsed ? parsed.toISOString() : "");
           }}
           placeholder={dict.dashboard.jalaliDatePlaceholder}
-          aria-label={dict.dashboard.jalaliDatePlaceholder}
-          title={dict.dashboard.jalaliDatePlaceholder}
-          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-          required
         />
         <input
           type="time"
