@@ -19,6 +19,7 @@ describe("CreateAppointmentUseCase", () => {
         status: "PENDING",
         createdByUserId: "user-1",
       }),
+      findConflicting: vi.fn().mockResolvedValue(null),
     };
     mockIsSlotValid = {
       execute: vi.fn().mockResolvedValue(true),
@@ -129,5 +130,73 @@ describe("CreateAppointmentUseCase", () => {
         "PATIENT" as any,
       ),
     ).rejects.toThrow("The requested time slot is outside the doctor's working hours");
+  });
+
+  it("should reject double-booking when same doctor already has appointment at same time", async () => {
+    mockRepository.findConflicting.mockResolvedValue({
+      id: "apt-existing",
+      doctorUserId: "doctor-1",
+      requestedAt: new Date("2026-12-24T10:00:00Z"),
+      status: "PENDING",
+    });
+
+    const futureDate = new Date("2026-12-24T10:00:00Z");
+
+    await expect(
+      useCase.execute(
+        {
+          createdByUserId: "user-1",
+          patientName: "Test",
+          patientPhone: "+123",
+          doctorName: "Dr",
+          requestedAt: futureDate,
+          serviceName: "Checkup",
+          doctorUserId: "doctor-1",
+        },
+        "PATIENT" as any,
+      ),
+    ).rejects.toThrow("This time slot is already booked");
+
+    expect(mockRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("should allow booking when conflicting appointment is cancelled", async () => {
+    mockRepository.findConflicting.mockResolvedValue(null);
+
+    const futureDate = new Date("2026-12-24T10:00:00Z");
+
+    const result = await useCase.execute(
+      {
+        createdByUserId: "user-1",
+        patientName: "Test",
+        patientPhone: "+123",
+        doctorName: "Dr",
+        requestedAt: futureDate,
+        serviceName: "Checkup",
+        doctorUserId: "doctor-1",
+      },
+      "PATIENT" as any,
+    );
+
+    expect(result).toBeDefined();
+    expect(mockRepository.create).toHaveBeenCalled();
+  });
+
+  it("should not check conflicts when doctorUserId is not provided", async () => {
+    const futureDate = new Date("2026-12-24T10:00:00Z");
+
+    await useCase.execute(
+      {
+        createdByUserId: "user-1",
+        patientName: "Test",
+        patientPhone: "+123",
+        doctorName: "Dr",
+        requestedAt: futureDate,
+        serviceName: "Checkup",
+      },
+      "PATIENT" as any,
+    );
+
+    expect(mockRepository.findConflicting).not.toHaveBeenCalled();
   });
 });

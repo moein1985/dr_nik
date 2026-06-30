@@ -28,6 +28,13 @@ export class CreateAppointmentUseCase {
       }
     }
 
+    if (input.doctorUserId) {
+      const conflicting = await this.repository.findConflicting(input.doctorUserId, input.requestedAt);
+      if (conflicting) {
+        throw new Error("This time slot is already booked. Please choose another time.");
+      }
+    }
+
     const appointment = await this.repository.create(input);
 
     if (this.writeAudit) {

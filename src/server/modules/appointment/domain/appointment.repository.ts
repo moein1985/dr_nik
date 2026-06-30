@@ -17,6 +17,7 @@ export interface AppointmentRepository {
   listByDoctorIds(doctorUserIds: string[]): Promise<Appointment[]>;
   listByCreator(createdByUserId: string): Promise<Appointment[]>;
   findById(id: string): Promise<Appointment | null>;
+  findConflicting(doctorUserId: string, requestedAt: Date, excludeId?: string): Promise<Appointment | null>;
   cancelByCreator(id: string, createdByUserId: string): Promise<Appointment>;
   delete(id: string): Promise<void>;
   updateStatus(id: string, status: AppointmentStatus): Promise<Appointment>;

@@ -31,6 +31,13 @@ export class UpdateAppointmentByStaffUseCase {
       }
     }
 
+    if (input.doctorUserId) {
+      const conflicting = await this.appointments.findConflicting(input.doctorUserId, input.requestedAt, input.id);
+      if (conflicting) {
+        throw new Error("This time slot is already booked. Please choose another time.");
+      }
+    }
+
     const appointment = await this.appointments.updateByStaff(input);
 
     if (this.writeAudit) {

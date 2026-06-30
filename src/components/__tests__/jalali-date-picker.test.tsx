@@ -82,4 +82,27 @@ describe("JalaliDatePicker (Bug 2)", () => {
     const selectedDay = screen.getByText("۱۵");
     expect(selectedDay).toHaveClass("bg-cyan-600");
   });
+
+  it("should align weekdays correctly - Tir 1 1405 is Monday (دوشنبه)", () => {
+    // Tir 1405 month starts on Monday. PERSIAN_WEEKDAYS = ["ش","ی","د","س","چ","پ","ج"]
+    // Monday = index 2 in Persian week (Saturday=0). So 1 empty cell before day 1.
+    render(<JalaliDatePicker value="" onChange={vi.fn()} placeholder="select" />);
+    const input = screen.getByPlaceholderText("select");
+    fireEvent.click(input);
+    // Navigate to Tir 1405 (month 4) - current month is Tir so no navigation needed
+    // Day 1 should be under "د" (دوشنبه = Monday) column
+    const dayOne = screen.getByText("۱");
+    // The button should be in the 3rd column (index 2) of the 7-column grid
+    // We verify by checking the parent grid's children order
+    expect(dayOne).toBeInTheDocument();
+    // There should be exactly 2 empty cells before day 1 (for ش and ی)
+    const grid = dayOne.closest(".grid");
+    expect(grid).not.toBeNull();
+    if (grid) {
+      const children = Array.from(grid.children);
+      // 7 weekday headers + 2 empty cells + day 1 = index 9
+      const dayOneIndex = children.indexOf(dayOne);
+      expect(dayOneIndex).toBe(9); // 7 headers + 2 empty = 9
+    }
+  });
 });

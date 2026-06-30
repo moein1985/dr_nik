@@ -80,7 +80,8 @@ export function JalaliDatePicker({ value, onChange, placeholder }: Props) {
   const firstDayWeekday = useMemo(() => {
     const gregorian = toGregorian(viewYear, viewMonth, 1);
     const date = new Date(Date.UTC(gregorian.gy, gregorian.gm - 1, gregorian.gd));
-    return date.getUTCDay();
+    const utcDay = date.getUTCDay();
+    return (utcDay + 1) % 7;
   }, [viewYear, viewMonth]);
 
   function selectDay(day: number) {

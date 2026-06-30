@@ -87,6 +87,21 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
     return appointment ? toDomainAppointment(appointment) : null;
   }
 
+  async findConflicting(doctorUserId: string, requestedAt: Date, excludeId?: string): Promise<Appointment | null> {
+    const where: Prisma.AppointmentWhereInput = {
+      doctorUserId,
+      requestedAt,
+      status: { not: "CANCELLED" },
+    };
+
+    if (excludeId) {
+      where.id = { not: excludeId };
+    }
+
+    const existing = await this.prisma.appointment.findFirst({ where });
+    return existing ? toDomainAppointment(existing) : null;
+  }
+
   async cancelByCreator(id: string, createdByUserId: string): Promise<Appointment> {
     const updateResult = await this.prisma.appointment.updateMany({
       where: {

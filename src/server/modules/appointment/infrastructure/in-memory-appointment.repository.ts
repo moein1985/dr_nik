@@ -54,6 +54,16 @@ export class InMemoryAppointmentRepository implements AppointmentRepository {
     return this.appointments.find((item) => item.id === id) ?? null;
   }
 
+  async findConflicting(doctorUserId: string, requestedAt: Date, excludeId?: string): Promise<Appointment | null> {
+    return this.appointments.find(
+      (item) =>
+        item.doctorUserId === doctorUserId &&
+        item.requestedAt.getTime() === requestedAt.getTime() &&
+        item.status !== "CANCELLED" &&
+        item.id !== excludeId,
+    ) ?? null;
+  }
+
   async cancelByCreator(id: string, createdByUserId: string): Promise<Appointment> {
     const target = this.appointments.find(
       (item) => item.id === id && item.createdByUserId === createdByUserId,
