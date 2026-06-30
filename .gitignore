@@ -22,9 +22,9 @@ pnpm-debug.log*
 # large deployment artifacts and local bundles
 app_image_redeploy_20260516*
 deploy_bundle/
-*.tar
-*.tar.gz
-*.sql
+/*.tar
+/*.tar.gz
+/*.sql
 
 # local temp artifacts
 /temp/
